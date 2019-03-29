@@ -26,7 +26,7 @@ TEST(affine_channel, native) {
   std::unordered_set<std::string> parameters({"scale", "bias"});
 
   framework::Scope scope;
-  AnakinConvertValidation validator(parameters, scope);
+  AnakinConvertValidation validator(parameters, &scope);
   validator.DeclInputVar("x", {1, 3, 5, 2});
   validator.DeclOutputVar("out", {1, 3, 5, 2});
   validator.DeclParamVar("scale", {1, 3, 1, 1});
