@@ -120,6 +120,9 @@ class AnakinOpConverter {
       engine->SetInputShape(input, input_shape);
       engine->Graph()->RegistVar(input);  // For share from data.
     }
+    for (auto &output : outputs) {
+      engine->Graph()->RegistVar(output);
+    }
     engine->SetMaxInputShape(temp_max_input_shape);
     engine->Optimize();
 
