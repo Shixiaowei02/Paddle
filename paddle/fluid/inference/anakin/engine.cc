@@ -94,7 +94,9 @@ void AnakinEngine<TargetT, PrecisionType, RunType>::Execute(
     for (auto act_val : framework::vectorize2int(tensor->dims())) {
       LOG(INFO) << "[ACT SHAPE]: " << act_val;
     }
-
+    for (auto in : scalable_inputs_) {
+      LOG(INFO) << "[PROGRAM INPUTS]: " << in;
+    }
     PADDLE_ENFORCE(max_shape_sum >= tensor->numel(),
                    "The anakin input max shape should be greater than"
                    " or equal to the real input shape, Please set the max "
