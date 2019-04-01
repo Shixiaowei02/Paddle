@@ -35,12 +35,14 @@ namespace anakin {
 template <typename TargetT, Precision PrecisionType, OpRunType RunType>
 AnakinEngine<TargetT, PrecisionType, RunType>::AnakinEngine(
     bool need_summary, int device, int max_batch_size,
-    std::map<std::string, std::vector<int>> max_input_shape)
+    std::map<std::string, std::vector<int>> max_input_shape,
+    std::vector<std::string> scalable_inputs)
     : graph_(new AnakinGraphT<TargetT, PrecisionType>()),
       net_(new AnakinNetT<TargetT, PrecisionType, RunType>(need_summary)) {
   device_ = device;
   max_batch_size_ = max_batch_size;
   max_input_shape_ = max_input_shape;
+  scalable_inputs_ = scalable_inputs;
 }
 
 template <typename TargetT, Precision PrecisionType, OpRunType RunType>
