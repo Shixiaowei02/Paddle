@@ -98,8 +98,9 @@ void AnakinEngine<TargetT, PrecisionType, RunType>::Execute(
       LOG(INFO) << "[PROGRAM INPUTS]: " << in;
     }
     if (tensor->numel() > max_shape_sum) {
-      PADDLE_ENFORCE(std::find(program_inputs_.begin(), program_inputs_.end(),
-                               input) == program_inputs_.end(),
+      bool is_global = std::find(program_inputs_.begin(), program_inputs_.end(),
+                                 input) == program_inputs_.end();
+      PADDLE_ENFORCE(is_global == false,
                      "The anakin input max shape should be greater than"
                      " or equal to the real input shape, Please set the max "
                      "input shape using EnableAnakinEngine");
