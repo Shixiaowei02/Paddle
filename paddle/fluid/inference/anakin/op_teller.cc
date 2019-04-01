@@ -44,7 +44,6 @@ struct SimpleOpTypeSetTeller : public Teller {
     teller_set.insert("sum");
     teller_set.insert("leaky_relu");
     teller_set.insert("affine_channel");
-    teller_set.insert("roi_align");
   }
 
   bool operator()(const std::string& op_type,
