@@ -90,7 +90,7 @@ class AnakinOpConverter {
     // the block_desc.
     auto max_input_shape = engine->GetMaxInputShape();
     std::map<std::string, std::vector<int>> temp_max_input_shape;
-    // Register outputs with anakin using the RegistVar interface.
+    // Register outputs with anakin using the RegistVar interface before Freeze.
     // Note that RegistVar's parameters can only be outputs, not inputs.
     for (auto &output : outputs) {
       LOG(INFO) << "RegistVar Output: " << output;
