@@ -93,6 +93,7 @@ class AnakinOpConverter {
     // Register outputs with anakin using the RegistVar interface.
     // Note that RegistVar's parameters can only be outputs, not inputs.
     for (auto &output : outputs) {
+      LOG(INFO) << "RegistVar Output: " << output;
       engine->Graph()->RegistVar(output);
     }
     engine->Freeze();
@@ -125,6 +126,7 @@ class AnakinOpConverter {
     }
     engine->SetMaxInputShape(temp_max_input_shape);
     engine->Optimize();
+    engine->Save(inputs[0] + "debug.bin");
     // For anakin share with fluid tensor.
     engine->AllocTmpMem();
     engine->InitGraph();

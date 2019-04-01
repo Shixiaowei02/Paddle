@@ -76,6 +76,7 @@ const std::vector<std::string> kAnakinSubgraphPasses({
     "simplify_anakin_detection_pattern_pass3",  //
     "simplify_anakin_detection_pattern_pass2",  //
     "anakin_fillconstant_elementwisemul_fuse",  //
+    "conv_affine_channel_fuse_pass",            //
     "fc_fuse_pass",                             //
     "conv_elementwise_add_fuse_pass",           //
     "conv_bn_fuse_pass",                        //

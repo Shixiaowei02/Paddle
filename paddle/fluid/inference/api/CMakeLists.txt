@@ -64,5 +64,6 @@ if (WITH_ANAKIN AND WITH_MKL) # only needed in CI
     anakin_target(inference_anakin_api)
     anakin_target(inference_anakin_api_shared)
 endif()
-#inference_analysis_test(ocr_ctc_test SRCS ocr_ctc_test.cc EXTRA_DEPS paddle_fluid)
+inference_analysis_test(ocr_ctc_test SRCS ocr_ctc_test.cc EXTRA_DEPS paddle_fluid)
+inference_analysis_test(faster_rcnn_test SRCS faster_rcnn_test.cc EXTRA_DEPS paddle_fluid)
 #inference_analysis_test(facebox_zero_test SRCS facebox_zero_test.cc EXTRA_DEPS paddle_fluid)

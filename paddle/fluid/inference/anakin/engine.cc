@@ -85,6 +85,13 @@ void AnakinEngine<TargetT, PrecisionType, RunType>::Execute(
     int max_shape_sum =
         std::accumulate(max_input_shape.begin(), max_input_shape.end(), 1,
                         std::multiplies<int>());
+    for (auto max_val : max_input_shape) {
+      LOG(INFO) << "[MAX SHAPE]: " << max_val;
+    }
+
+    for (auto act_val : framework::vectorize2int(tensor->dims())) {
+      LOG(INFO) << "[ACT SHAPE]: " << act_val;
+    }
 
     PADDLE_ENFORCE(max_shape_sum >= tensor->numel(),
                    "The anakin input max shape should be greater than"
