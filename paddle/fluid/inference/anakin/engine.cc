@@ -96,7 +96,7 @@ void AnakinEngine<TargetT, PrecisionType, RunType>::Execute(
       VLOG(3) << "Anakin Net will be reset because of the inputs out of range: " << input.first;
       graph_->Reshape(input.first, fluid_input_shape);
       net_.reset(new AnakinNetT<TargetT, PrecisionType, RunType>(true));
-      net_->init(*graph);
+      net_->init(*graph_);
       anakin_input = net_->get_in(input.first);
     }
     anakin_input->reshape(fluid_input_shape);
