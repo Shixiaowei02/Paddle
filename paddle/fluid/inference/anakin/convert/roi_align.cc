@@ -48,7 +48,7 @@ void RoiAlignOpConverter::operator()(const framework::proto::OpDesc &op,
   engine_->AddOpAttr(op_name, "spatial_scale", spatial_scale);
   engine_->AddOpAttr(op_name, "pooled_height", pooled_height);
   engine_->AddOpAttr(op_name, "pooled_width", pooled_width);
-  engine_->AddOpAttr(op_name, "sampling_ratio", sampling_ratio0);
+  engine_->AddOpAttr(op_name, "sampling_ratio", sampling_ratio);
 }
 
 }  // namespace anakin
