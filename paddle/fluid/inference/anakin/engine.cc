@@ -94,7 +94,7 @@ void AnakinEngine<TargetT, PrecisionType, RunType>::Execute(
     for (auto act_val : framework::vectorize2int(tensor->dims())) {
       LOG(INFO) << "[ACT SHAPE]: " << act_val;
     }
-    for (auto in : scalable_inputs_) {
+    for (auto in : program_inputs_) {
       LOG(INFO) << "[PROGRAM INPUTS]: " << in;
     }
     if (tensor->numel() > max_shape_sum) {
@@ -107,7 +107,7 @@ void AnakinEngine<TargetT, PrecisionType, RunType>::Execute(
               << input.first;
       graph_->Reshape(input.first, fluid_input_shape);
       net_.reset(new AnakinNetT<TargetT, PrecisionType, RunType>(true));
-      net_->init(*graph);
+      net_->init(*graph_);
       anakin_input = net_->get_in(input.first);
     }
     anakin_input->reshape(fluid_input_shape);
