@@ -59,7 +59,7 @@ class AnakinEngine {
   explicit AnakinEngine(
       bool need_summary = false, int device = 0, int max_batch_size = 1,
       std::map<std::string, std::vector<int>> max_input_shape = {},
-      std::vector<std::string> scalable_inputs = {});
+      std::vector<std::string> program_inputs = {});
   ~AnakinEngine();
   void InitGraph();
   void SetInputShape(const std::string &name, std::vector<int> shape);
@@ -83,10 +83,10 @@ class AnakinEngine {
     max_input_shape_ = shape;
   }
   const std::vector<std::string> &GetScalableInputs() {
-    return scalable_inputs_;
+    return program_inputs_;
   }
-  void SetScalableInputs(std::vector<std::string> scalable_inputs) {
-    scalable_inputs_ = scalable_inputs;
+  void SetScalableInputs(std::vector<std::string> program_inputs) {
+    program_inputs_ = program_inputs;
   }
   int GetMaxBatchSize() { return max_batch_size_; }
   void Freeze();
@@ -110,7 +110,7 @@ class AnakinEngine {
   int device_;
   std::unique_ptr<GraphT> graph_;
   std::unique_ptr<NetT> net_;
-  std::vector<std::string> scalable_inputs_;
+  std::vector<std::string> program_inputs_;
 };
 
 class AnakinEngineManager {
@@ -128,12 +128,12 @@ class AnakinEngineManager {
   AnakinNvEngineT *Create(
       bool need_summary, int device, int max_batch_size,
       std::map<std::string, std::vector<int>> max_input_shape,
-      std::vector<std::string> scalable_inputs,
+      std::vector<std::string> program_inputs,
       std::string engine_name) {
     std::unique_lock<std::mutex> lk(mut_);
     auto *p = new AnakinEngine<NV, Precision::FP32>(
         need_summary, device, max_batch_size, max_input_shape,
-        scalable_inputs);
+        program_inputs);
     engines_[engine_name].reset(p);
     return p;
   }
