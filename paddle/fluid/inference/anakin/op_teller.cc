@@ -42,6 +42,8 @@ struct SimpleOpTypeSetTeller : public Teller {
     teller_set.insert("dropout");
     teller_set.insert("sigmoid");
     teller_set.insert("sum");
+    teller_set.insert("leaky_relu");
+    teller_set.insert("affine_channel");
   }
 
   bool operator()(const std::string& op_type,
