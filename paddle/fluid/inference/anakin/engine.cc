@@ -89,12 +89,12 @@ void AnakinEngine<TargetT, PrecisionType, RunType>::Execute(
                         std::multiplies<int>());
     if (tensor->numel() > max_shape_sum) {
       PADDLE_ENFORCE(std::find(program_inputs_.begin(), program_inputs_.end(),
-                               input) == program_inputs_.end(),
+                               input.first) == program_inputs_.end(),
                      "The anakin input max shape should be greater than"
                      " or equal to the real input shape, Please set the max "
                      "input shape using EnableAnakinEngine");
       VLOG(3) << "Anakin Net will be reset because of the inputs out of range: "
-              << input;
+              << input.first;
       graph_->Reshape(input.first, fluid_input_shape);
       net_.reset(new AnakinNetT<TargetT, PrecisionType, RunType>(true));
       net_->init(*graph_);
