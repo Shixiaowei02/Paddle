@@ -14,6 +14,8 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <string>
+#include <vector>
 #include "paddle/fluid/framework/block_desc.h"
 #include "paddle/fluid/framework/lod_tensor.h"
 #include "paddle/fluid/framework/op_registry.h"
@@ -23,6 +25,38 @@
 namespace paddle {
 namespace inference {
 namespace lite {
+
+void AddTensorToBlockDesc(framework::proto::BlockDesc* block,
+                          const std::string& name,
+                          const std::vector<int64_t>& shape,
+                          bool persistable = false) {
+  using framework::proto::VarType;
+  auto* var = block->add_vars();
+  framework::VarDesc desc(name);
+  desc.SetType(VarType::LOD_TENSOR);
+  desc.SetDataType(VarType::FP32);
+  desc.SetShape(shape);
+  desc.SetPersistable(persistable);
+  *var = *desc.Proto();
+}
+
+void serialize_params(std::string* str, framework::Scope* scope,
+                      const std::vector<std::string>& params) {
+  std::ostringstream os;
+#ifdef PADDLE_WITH_CUDA
+  platform::CUDAPlace place;
+  platform::CUDADeviceContext ctx(place);
+#else
+  platform::CPUDeviceContext ctx;
+#endif
+  for (const auto& param : params) {
+    PADDLE_ENFORCE_NOT_NULL(scope->FindVar(param),
+                            "Block should already have a '%s' variable", param);
+    auto* tensor = scope->FindVar(param)->GetMutable<framework::LoDTensor>();
+    framework::SerializeToStream(os, *tensor, ctx);
+  }
+  *str = os.str();
+}
 
 /*
  * Get a random float value between [low, high]
@@ -47,10 +81,26 @@ void RandomizeTensor(framework::LoDTensor* tensor,
 
   for (size_t i = 0; i < num_elements; i++) {
     *(temp_data + i) = random(0., 1.);
+    LOG(INFO) << "weights: " << *(temp_data + i);
   }
 
   TensorCopySync(temp_tensor, place, tensor);
 }
+
+void CreateTensor(framework::Scope* scope, const std::string& name,
+                  const std::vector<int64_t>& shape) {
+  auto* var = scope->Var(name);
+  auto* tensor = var->GetMutable<framework::LoDTensor>();
+  auto dims = framework::make_ddim(shape);
+  tensor->Resize(dims);
+#ifdef PADDLE_WITH_CUDA
+  platform::CUDAPlace place;
+#else
+  platform::CPUPlace place;
+#endif
+  RandomizeTensor(tensor, place);
+}
+
 }  // namespace lite
 }  // namespace inference
 }  // namespace paddle

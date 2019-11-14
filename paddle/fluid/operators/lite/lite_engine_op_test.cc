@@ -18,53 +18,38 @@
 #include "paddle/fluid/framework/op_desc.h"
 #include "paddle/fluid/framework/program_desc.h"
 #include "paddle/fluid/framework/scope.h"
-#include "paddle/fluid/inference/utils/singleton.h"
-#include "paddle/fluid/operators/lite/lite_engine_op.h"
-#include "paddle/fluid/operators/lite/ut_helper.h"
 
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
+// must be this order
+#include "paddle/fluid/inference/utils/singleton.h"
+#include "paddle/fluid/operators/lite/lite_engine_op.h"
+#include "paddle/fluid/operators/lite/ut_helper.h"
 
 USE_NO_KERNEL_OP(lite_engine)
+
+using paddle::inference::lite::AddTensorToBlockDesc;
+using paddle::inference::lite::CreateTensor;
+using paddle::inference::lite::serialize_params;
+
 namespace paddle {
 namespace operators {
 
-namespace {
-void CreateTensor(framework::Scope* scope, const std::string& name,
-                  const std::vector<int64_t>& shape) {
-  auto* var = scope->Var(name);
-  auto* tensor = var->GetMutable<framework::LoDTensor>();
-  auto dims = framework::make_ddim(shape);
-  tensor->Resize(dims);
-#ifdef PADDLE_WITH_CUDA
-  platform::CUDAPlace place;
-#else
-  platform::CPUPlace place;
-#endif
-  inference::lite::RandomizeTensor(tensor, place);
-}
-
-void AddTensorToBlockDesc(framework::proto::BlockDesc* block,
-                          const std::string& name,
-                          const std::vector<int64_t>& shape, bool persistable) {
-  using framework::proto::VarType;
-  auto* var = block->add_vars();
-  framework::VarDesc desc(name);
-  desc.SetType(VarType::LOD_TENSOR);
-  desc.SetDataType(VarType::FP32);
-  desc.SetShape(shape);
-  desc.SetPersistable(persistable);
-  *var = *desc.Proto();
-}
-}  // namespace
-
-TEST(LiteEngineOp, manual) {
+TEST(LiteEngineOp, engine_op) {
   framework::ProgramDesc program;
   auto* block_ = program.Proto()->mutable_blocks(0);
-
-  LOG(INFO) << "create block desc";
   framework::BlockDesc block_desc(&program, block_);
+  auto* feed0 = block_desc.AppendOp();
+  feed0->SetType("feed");
+  feed0->SetInput("X", {"feed"});
+  feed0->SetOutput("Out", {"x"});
+  feed0->SetAttr("col", 0);
+  auto* feed1 = block_desc.AppendOp();
+  feed1->SetType("feed");
+  feed1->SetInput("X", {"feed"});
+  feed1->SetOutput("Out", {"y"});
+  feed1->SetAttr("col", 1);
   LOG(INFO) << "create elementwise_add op";
   auto* elt_add = block_desc.AppendOp();
   elt_add->SetType("elementwise_add");
@@ -84,6 +69,8 @@ TEST(LiteEngineOp, manual) {
   AddTensorToBlockDesc(block_, "z", std::vector<int64_t>({2, 4}), false);
   AddTensorToBlockDesc(block_, "out", std::vector<int64_t>({2, 4}), false);
 
+  *block_->add_ops() = *feed1->Proto();
+  *block_->add_ops() = *feed0->Proto();
   *block_->add_ops() = *elt_add->Proto();
   *block_->add_ops() = *fetch->Proto();
 
@@ -98,44 +85,18 @@ TEST(LiteEngineOp, manual) {
   // Prepare variables.
   CreateTensor(&scope, "x", std::vector<int64_t>({2, 4}));
   CreateTensor(&scope, "y", std::vector<int64_t>({2, 4}));
-  CreateTensor(&scope, "z", std::vector<int64_t>({2, 4}));
   CreateTensor(&scope, "out", std::vector<int64_t>({2, 4}));
 
-  ASSERT_EQ(block_->ops_size(), 2);
+  ASSERT_EQ(block_->ops_size(), 4);
 
-  auto serialize_params = [](std::string* str, framework::Scope* scope,
-                             const std::vector<std::string>& params) {
-    std::ostringstream os;
-#ifdef PADDLE_WITH_CUDA
-    platform::CUDAPlace place;
-    platform::CUDADeviceContext ctx(place);
-#else
-    platform::CPUDeviceContext ctx;
-#endif
-    for (const auto& param : params) {
-      PADDLE_ENFORCE_NOT_NULL(scope->FindVar(param),
-                              "Block should already have a '%s' variable",
-                              param);
-      auto* tensor = scope->FindVar(param)->GetMutable<framework::LoDTensor>();
-      framework::SerializeToStream(os, *tensor, ctx);
-    }
-    *str = os.str();
-  };
   std::vector<std::string> repetitive_params{"x", "y"};
   inference::lite::EngineConfig config;
-  config.prefer_place = {
-#ifdef PADDLE_WITH_CUDA
-      TARGET(kCUDA), PRECISION(kFloat),
-#else
-      TARGET(kX86), PRECISION(kFloat)
-#endif
-  };
   config.valid_places = {
-      paddle::lite::Place({TARGET(kHost), PRECISION(kAny)}),
-      paddle::lite::Place({TARGET(kX86), PRECISION(kFloat)}),
 #ifdef PADDLE_WITH_CUDA
       paddle::lite::Place({TARGET(kCUDA), PRECISION(kFloat)}),
 #endif
+      paddle::lite::Place({TARGET(kHost), PRECISION(kAny)}),
+      paddle::lite::Place({TARGET(kX86), PRECISION(kFloat)}),
   };
   serialize_params(&(config.param), &scope, repetitive_params);
   config.model = program.Proto()->SerializeAsString();
@@ -147,6 +108,7 @@ TEST(LiteEngineOp, manual) {
   engine_op_desc.SetOutput("Ys", std::vector<std::string>({"out"}));
   std::string engine_key = "engine_0";
   engine_op_desc.SetAttr("engine_key", engine_key);
+  engine_op_desc.SetAttr("enable_int8", false);
   engine_op_desc.SetBlockAttr("sub_block", &block_desc);
 
   inference::Singleton<inference::lite::EngineManager>::Global().Create(
@@ -159,6 +121,7 @@ TEST(LiteEngineOp, manual) {
   // Execute them.
   LOG(INFO) << "engine_op run";
   engine_op->Run(scope, place);
+  LOG(INFO) << "done";
 }
 }  // namespace operators
 }  // namespace paddle
