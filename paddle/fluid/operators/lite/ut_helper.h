@@ -88,16 +88,21 @@ void RandomizeTensor(framework::LoDTensor* tensor,
 }
 
 void CreateTensor(framework::Scope* scope, const std::string& name,
-                  const std::vector<int64_t>& shape) {
+                  const std::vector<int64_t>& shape, bool in_cuda = true) {
   auto* var = scope->Var(name);
   auto* tensor = var->GetMutable<framework::LoDTensor>();
   auto dims = framework::make_ddim(shape);
   tensor->Resize(dims);
+  platform::Place place;
+  if (in_cuda) {
 #ifdef PADDLE_WITH_CUDA
-  platform::CUDAPlace place;
+    place = platform::CUDAPlace(0);
 #else
-  platform::CPUPlace place;
+    LOG(FATAL) << "You must define PADDLE_WITH_CUDA for using CUDAPlace.";
 #endif
+  } else {
+    place = platform::CPUPlace();
+  }
   RandomizeTensor(tensor, place);
 }
 

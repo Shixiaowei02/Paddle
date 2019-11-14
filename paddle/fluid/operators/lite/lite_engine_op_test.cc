@@ -83,9 +83,9 @@ TEST(LiteEngineOp, engine_op) {
   platform::CPUDeviceContext ctx(place);
 #endif
   // Prepare variables.
-  CreateTensor(&scope, "x", std::vector<int64_t>({2, 4}));
-  CreateTensor(&scope, "y", std::vector<int64_t>({2, 4}));
-  CreateTensor(&scope, "out", std::vector<int64_t>({2, 4}));
+  CreateTensor(&scope, "x", std::vector<int64_t>({2, 4}), false);
+  CreateTensor(&scope, "y", std::vector<int64_t>({2, 4}), false);
+  CreateTensor(&scope, "out", std::vector<int64_t>({2, 4}), false);
 
   ASSERT_EQ(block_->ops_size(), 4);
 
