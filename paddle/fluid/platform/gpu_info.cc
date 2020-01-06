@@ -331,12 +331,11 @@ void GpuMemsetAsync(void *dst, int value, size_t count, cudaStream_t stream) {
 }
 
 void GpuStreamSync(cudaStream_t stream) {
-  auto error_code = cudaStreamSynchronize(stream);
-  PADDLE_ENFORCE(
-      error_code,
+  PADDLE_ENFORCE_CUDA_SUCCESS(cudaStreamSynchronize(stream),
+    platform::errors::External(
       "cudaStreamSynchronize failed in paddle::platform::GpuStreamSync "
       "error code : %d, %s",
-      error_code, CudaErrorWebsite());
+      error_code, CudaErrorWebsite()));
 }
 
 void RaiseNonOutOfMemoryError(cudaError_t *status) {
