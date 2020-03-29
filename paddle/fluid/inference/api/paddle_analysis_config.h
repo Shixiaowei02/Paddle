@@ -500,6 +500,8 @@ struct AnalysisConfig {
   PassStrategy* pass_builder() const;
   void PartiallyRelease();
 
+  void BindGpuStreamToThread(bool high_priority = false);
+
  protected:
   // Update the config.
   void Update();
@@ -575,6 +577,9 @@ struct AnalysisConfig {
   std::vector<std::string> lite_passes_filter_;
   std::vector<std::string> lite_ops_filter_;
   Precision lite_precision_mode_;
+
+  bool thread_local_stream_{false};
+  bool high_priority_stream_{false};
 
   // mkldnn related.
   int mkldnn_cache_capacity_{0};
