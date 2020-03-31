@@ -140,8 +140,9 @@ class EigenCudaStreamDevice : public Eigen::StreamInterface {
   }
   ~EigenCudaStreamDevice() override {}
 
-  void Reinitialize(const cudaStream_t* cuda_stream, CUDAPlace place) {
-    stream_ = cuda_stream;
+  void Reinitialize(CUDAContext* ctx, CUDAPlace place) {
+    ctx_ = ctx;
+    stream_ = &ctx->Stream();
     place_ = place;
     device_prop_ = &Eigen::m_deviceProperties[place.device];
   }
@@ -169,8 +170,9 @@ class EigenCudaStreamDevice : public Eigen::StreamInterface {
 
   void deallocate(void* buffer) const override {
     if (LIKELY(buffer)) {
-      std::lock_guard<std::mutex> lock(mtx_);
-      allocations_.erase(buffer);
+      AsyncFreeData* afData = new AsyncFreeData(&allocations_, buffer, &mtx_);
+      PADDLE_ENFORCE_CUDA_SUCCESS(
+          cudaStreamAddCallback(*stream_, asyncFree, afData, 0));
     }
   }
 
@@ -193,8 +195,25 @@ class EigenCudaStreamDevice : public Eigen::StreamInterface {
   }
 
  private:
+  struct AsyncFreeData {
+    AsyncFreeData(std::unordered_map<void*, memory::AllocationPtr>* m, void* p,
+                  std::mutex* mtx)
+        : allocation_map_(m), address_(p), mtx_(mtx) {}
+    std::unordered_map<void*, memory::AllocationPtr>* allocation_map_;
+    void* address_;
+    std::mutex* mtx_;
+  };
+
+  static void CUDART_CB asyncFree(cudaStream_t stream, cudaError_t status,
+                                  void* userData) {
+    AsyncFreeData* d = static_cast<AsyncFreeData*>(userData);
+    std::lock_guard<std::mutex> lock(*(d->mtx_));
+    d->allocation_map_->erase(d->address_);
+    delete d;
+  }
   CUDAPlace place_;
-  const cudaStream_t* stream_;         // not owned;
+  const cudaStream_t* stream_;  // not owned;
+  CUDAContext* ctx_;
   const cudaDeviceProp* device_prop_;  // not owned;
   mutable void* scratch_;
   mutable unsigned int* semaphore_;
@@ -218,7 +237,7 @@ thread_local std::mutex CUDADeviceContext::ctx_mtx_;
 
 void CUDAContext::InitEigenContext() {
   eigen_stream_.reset(new EigenCudaStreamDevice());
-  eigen_stream_->Reinitialize(&RawStream(), place_);
+  eigen_stream_->Reinitialize(this, place_);
   eigen_device_.reset(new Eigen::GpuDevice(eigen_stream_.get()));
 }
 
