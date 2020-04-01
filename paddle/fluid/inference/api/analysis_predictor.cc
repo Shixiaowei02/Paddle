@@ -214,10 +214,6 @@ bool AnalysisPredictor::CreateExecutor() {
     status_use_gpu_ = true;
     place_ = paddle::platform::CUDAPlace(config_.device_id_);
 #ifdef PADDLE_WITH_CUDA
-  auto* trt_map = inference::Singleton<inference::tensorrt::TRTEngineManager>::Global().engines_map();
-  for (auto& p : *trt_map) {
-    p.second->context();
-  }
     if (config_.thread_local_stream_) {
       auto *ctx = static_cast<platform::CUDADeviceContext *>(
           platform::DeviceContextPool::Instance().Get(place_));
@@ -239,6 +235,12 @@ bool AnalysisPredictor::CreateExecutor() {
   return true;
 }
 bool AnalysisPredictor::PrepareExecutor() {
+  auto* trt_map = inference::Singleton<inference::tensorrt::TRTEngineManager>::Global().engines_map();
+  LOG(INFO) << "trt_map->size() = " << trt_map->size();
+  for (auto& p : *trt_map) {
+    auto* address = p.second->context();
+    LOG(INFO) << "========== AnalysisPredictor::CreateExecutor ctx = " << address;
+  }
   executor_->Prepare(sub_scope_, *inference_program_, 0,
                      config_.use_feed_fetch_ops_);
 
