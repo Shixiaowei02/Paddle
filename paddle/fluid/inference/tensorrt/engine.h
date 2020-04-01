@@ -394,6 +394,10 @@ class TRTEngineManager {
     }
   }
 
+  std::unordered_map<std::string, std::unique_ptr<TensorRTEngine>>* engines_map() {
+    return &engines_;
+  }
+
  private:
   std::unordered_map<std::string, std::unique_ptr<TensorRTEngine>> engines_;
 };
