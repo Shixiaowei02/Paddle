@@ -148,6 +148,7 @@ class TensorRTEngineOp : public framework::OperatorBase {
       return;
     }
     auto *trt_engine = GetEngine(scope, dev_place);
+    LOG(INFO) << "======= Address of trt_engine is " << trt_engine;
     RunTrt(scope, dev_place, trt_engine);
   }
 
@@ -248,6 +249,7 @@ class TensorRTEngineOp : public framework::OperatorBase {
       } else {
 #if IS_TRT_VERSION_GE(6000)
         auto *trt_context = engine->context();
+        LOG(INFO) << "trt_context address = " << trt_context;
         trt_context->setBindingDimensions(
             bind_index, inference::tensorrt::Vec2TRT_Dims(t_shape, x, true));
 #endif
