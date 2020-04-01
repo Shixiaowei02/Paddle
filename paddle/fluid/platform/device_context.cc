@@ -229,10 +229,11 @@ void CudnnWorkspaceHandle::ReallocWorkspace(size_t required_workspace_bytes) {
   allocation_.reset();
   allocation_ = memory::Alloc(device_context_, required_workspace_bytes);
 }
-
+/*
 thread_local std::unordered_map<const CUDADeviceContext*,
                                 std::unique_ptr<CUDAContext>>
     CUDADeviceContext::thread_ctx_;
+*/
 thread_local std::mutex CUDADeviceContext::ctx_mtx_;
 
 void CUDAContext::InitEigenContext(const stream::CUDAStream& stream) {

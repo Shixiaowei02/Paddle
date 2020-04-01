@@ -322,23 +322,30 @@ class CUDADeviceContext : public DeviceContext {
 
   void ResetThreadContext(const enum stream::Priority& priority) {
     std::lock_guard<std::mutex> guard(ctx_mtx_);
-    thread_ctx_[this].reset(new CUDAContext(place_, priority));
+    const std::thread::id tid = std::this_thread::get_id();
+    thread_ctx_[tid].reset(new CUDAContext(place_, priority));
+   // thread_ctx_[this].reset(new CUDAContext(place_, priority));
   }
 
   const std::unique_ptr<CUDAContext>& context() const {
-    if (!thread_ctx_.count(this)) {
+    const std::thread::id tid = std::this_thread::get_id();
+    if (!thread_ctx_.count(tid)) {
       return default_ctx_;
     }
-    return thread_ctx_.at(this);
+    return thread_ctx_.at(tid);
   }
 
  private:
   CUDAPlace place_;
   std::unique_ptr<CUDAContext> default_ctx_;
 
+  std::unordered_map<std::thread::id, std::unique_ptr<CUDAContext>>
+      thread_ctx_;
+/*
   static thread_local std::unordered_map<const CUDADeviceContext*,
                                          std::unique_ptr<CUDAContext>>
       thread_ctx_;
+*/
   static thread_local std::mutex ctx_mtx_;
 
   mutable std::mutex cudnn_handle_mtx_;
