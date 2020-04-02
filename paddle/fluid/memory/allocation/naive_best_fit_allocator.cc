@@ -118,7 +118,7 @@ class GPUBuddyAllocatorList {
 
  public:
   static GPUBuddyAllocatorList *Instance() {
-    static auto *instance = CreateNewInstance();
+    static thread_local auto *instance = CreateNewInstance();
     return instance;
   }
 
