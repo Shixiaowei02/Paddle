@@ -44,6 +44,12 @@ cc_library(analysis_predictor SRCS analysis_predictor.cc ${mkldnn_quantizer_src}
 
 cc_test(test_paddle_inference_api SRCS api_tester.cc DEPS paddle_inference_api)
 
+set_source_files_properties(infer_ernie_rank_trt.cc PROPERTIES COMPILE_FLAGS "-Wno-error")
+cc_binary(infer_ernie_rank_trt SRCS infer_ernie_rank_trt.cc DEPS analysis_predictor) 
+cc_binary(trt_dynamic_shape_test SRCS trt_dynamic_shape_test.cc DEPS analysis_predictor) 
+
+
+
 if(WITH_TESTING)
   inference_base_test(test_api_impl SRCS api_impl_tester.cc DEPS ${inference_deps}
                       ARGS --word2vec_dirname=${WORD2VEC_MODEL_DIR} --book_dirname=${PYTHON_TESTS_DIR}/book)
