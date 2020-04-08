@@ -174,21 +174,21 @@ class TestLoadInferenceModelOpError(unittest.TestCase):
     def test_errors(self):
         with program_guard(Program(), Program()):
             def test_dirname_bool():
-                fluid.layers.load_inference_model(dirname=True,
+                fluid.io.load_inference_model(dirname=True,
                     executor=executor.Executor(core.CPUPlace()))
             def test_executor_Variable():
-                fluid.layers.load_inference_model(dirname=str(),
-                    executor=Variable())
+                fluid.io.load_inference_model(dirname=str(),
+                    executor=fluid.framework.Variable())
             def test_filename_int():
-                fluid.layers.load_inference_model(dirname=str(),
+                fluid.io.load_inference_model(dirname=str(),
                     executor=executor.Executor(core.CPUPlace()),
                     model_filename=0,
                     params_filename=0,
                     pserver_endpoints=None)
             def test_pserver_endpoints_Variable_list():
-                fluid.layers.load_inference_model(dirname=str(),
+                fluid.io.load_inference_model(dirname=str(),
                     executor=executor.Executor(core.CPUPlace()),
-                    pserver_endpoints=(Variable()))
+                    pserver_endpoints=(fluid.framework.Variable()))
         self.assertRaises(TypeError, test_dirname_bool)
         self.assertRaises(TypeError, test_executor_Variable)
         self.assertRaises(TypeError, test_filename_int)
