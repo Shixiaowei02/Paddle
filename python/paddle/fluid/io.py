@@ -1318,6 +1318,16 @@ def load_inference_model(dirname,
             # fetch_targets, we can use an executor to run the inference
             # program for getting the inference result.
     """
+    # Check the type of inputs.
+    check_type(dirname, 'dirname', str, 'load_inference_model')
+    check_type(executor, 'executor', Executor, 'load_inference_model')
+    check_type(model_filename, 'model_filename', (str, None), 'load_inference_model')
+    check_type(params_filename, 'params_filename', (str, None), 'load_inference_model')
+    check_type(pserver_endpoints, 'pserver_endpoints', (list, None), 'load_inference_model')
+    if isinstance(pserver_endpoints, list):
+        for i, p in enumerate(pserver_endpoints):
+            check_type(p, 'pserver_endpoints[' + str(i) + ']', str, 'load_inference_model')
+
     load_dirname = os.path.normpath(dirname)
     if not os.path.isdir(load_dirname):
         raise ValueError("There is no directory named '%s'", dirname)
