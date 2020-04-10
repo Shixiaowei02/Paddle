@@ -324,7 +324,7 @@ class CUDADeviceContext : public DeviceContext {
     thread_ctx_[this].reset(new CUDAContext(place_, priority));
   }
 
-  const std::unique_ptr<CUDAContext>& context() const {
+  std::shared_ptr<CUDAContext> context() const {
     if (!thread_ctx_.count(this)) {
       return default_ctx_;
     }
@@ -333,10 +333,12 @@ class CUDADeviceContext : public DeviceContext {
 
  private:
   CUDAPlace place_;
-  std::unique_ptr<CUDAContext> default_ctx_;
+  std::shared_ptr<CUDAContext> default_ctx_;
 
+  // The thread_local static variable will be released before the
+  // global static variable, so avoid using it in dtor.
   static thread_local std::unordered_map<const CUDADeviceContext*,
-                                         std::unique_ptr<CUDAContext>>
+                                         std::shared_ptr<CUDAContext>>
       thread_ctx_;
   static thread_local std::mutex ctx_mtx_;
 

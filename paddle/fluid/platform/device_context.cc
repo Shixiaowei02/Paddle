@@ -212,7 +212,7 @@ void CudnnWorkspaceHandle::ReallocWorkspace(size_t required_workspace_bytes) {
 }
 
 thread_local std::unordered_map<const CUDADeviceContext*,
-                                std::unique_ptr<CUDAContext>>
+                                std::shared_ptr<CUDAContext>>
     CUDADeviceContext::thread_ctx_;
 thread_local std::mutex CUDADeviceContext::ctx_mtx_;
 
@@ -235,6 +235,8 @@ CUDAContext::CUDAContext(const CUDAPlace& place,
 
 CUDAContext::~CUDAContext() {
   CUDADeviceGuard guard(place_.device);
+  Wait();
+  WaitStreamCallback();
   DestoryCuDNNContext();
   DestoryCuBlasContext();
 }
@@ -285,8 +287,6 @@ CUDADeviceContext::CUDADeviceContext(CUDAPlace place) : place_(place) {
 
 CUDADeviceContext::~CUDADeviceContext() {
   SetDeviceId(place_.device);
-  Wait();
-  WaitStreamCallback();
 #if defined(PADDLE_WITH_NCCL)
   if (nccl_comm_) {
     PADDLE_ENFORCE_CUDA_SUCCESS(dynload::ncclCommDestroy(nccl_comm_));
