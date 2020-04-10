@@ -176,6 +176,8 @@ struct AnalysisConfig {
   ///
   ///
   void DisableGpu();
+
+  void EnableXpu(int l3_workspace_size = 0xfffc00);
   ///
   /// \brief A boolean state telling whether the GPU is turned on.
   ///
@@ -564,6 +566,9 @@ struct AnalysisConfig {
   std::vector<std::string> lite_ops_filter_;
   Precision lite_precision_mode_;
   bool lite_zero_copy_;
+
+  bool use_xpu_{false};
+  int xpu_l3_workspace_size_;
 
   // mkldnn related.
   int mkldnn_cache_capacity_{0};

@@ -16,10 +16,15 @@
 #define LITE_WITH_CUDA 1
 #endif
 
+#ifdef PADDLE_WITH_XPU
+#define LITE_WITH_XPU 1
+#endif
+
 #include "paddle/fluid/inference/lite/engine.h"
 #include "lite/core/context.h"
 #include "lite/core/device_info.h"
 
+#include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
@@ -43,10 +48,17 @@ paddle::lite::Predictor* EngineManager::Get(const std::string& name) const {
 
 paddle::lite::Predictor* EngineManager::Create(const std::string& name,
                                                const EngineConfig& cfg) {
-  auto* p = new paddle::lite::Predictor();
+  if (cfg.valid_places.front().target == TARGET(kCUDA)) {
 #ifdef PADDLE_WITH_CUDA
-  paddle::lite::Env<TARGET(kCUDA)>::Init();
+    paddle::lite::Env<TARGET(kCUDA)>::Init();
 #endif
+  } else if (cfg.valid_places.front().target == TARGET(kXPU)) {
+#ifdef PADDLE_WITH_XPU
+    paddle::lite::Context<TARGET(kXPU)>::SetWorkspaceL3Size(
+        cfg.xpu_l3_workspace_size);
+#endif
+  }
+  auto* p = new paddle::lite::Predictor();
   p->Build("", cfg.model, cfg.param, cfg.valid_places, cfg.neglected_passes,
            cfg.model_type, cfg.model_from_memory);
   engines_[name].reset(p);

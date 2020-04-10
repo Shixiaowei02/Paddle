@@ -79,7 +79,7 @@ message(STATUS "Paddle-lite SOURCE_DIR: ${LITE_SOURCE_DIR}")
 include_directories(${LITE_SOURCE_DIR})
 include_directories(${LITE_BINARY_DIR})
 
-function(external_lite_static_libs alias path)
+function(external_lite_libs alias path)
   add_library(${alias} SHARED IMPORTED GLOBAL)
   SET_PROPERTY(TARGET ${alias} PROPERTY IMPORTED_LOCATION
                ${path})
@@ -88,6 +88,13 @@ function(external_lite_static_libs alias path)
   endif()
 endfunction()
 
-external_lite_static_libs(lite_full_static ${LITE_BINARY_DIR}/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so)
+external_lite_libs(lite_full_static ${LITE_BINARY_DIR}/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so)
+
+if(XPU_SDK_ROOT)
+  include_directories("${XPU_SDK_ROOT}/XTDK/include")
+  include_directories("${XPU_SDK_ROOT}/XTCL/include")
+  add_definitions(-DPADDLE_WITH_XPU)
+  LINK_DIRECTORIES("${XPU_SDK_ROOT}/XTDK/shlib/")
+endif()
 
 add_definitions(-DPADDLE_WITH_LITE)
