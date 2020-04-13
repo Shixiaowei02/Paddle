@@ -33,6 +33,7 @@ enum class Priority : uint8_t {
 
 class CUDAStream final {
  public:
+  using stream_t = cudaStream_t;
   CUDAStream() = default;
   CUDAStream(const Place& place,
              const enum Priority& priority = Priority::NORMAL) {
@@ -43,12 +44,12 @@ class CUDAStream final {
   bool Init(const Place& place,
             const enum Priority& priority = Priority::NORMAL);
 
-  const cudaStream_t& stream() const { return stream_; }
+  const stream_t& stream() const { return stream_; }
   void Destroy();
 
  private:
   Place place_;
-  cudaStream_t stream_{nullptr};
+  stream_t stream_{nullptr};
   Priority priority_{Priority::NORMAL};
 
   DISABLE_COPY_AND_ASSIGN(CUDAStream);
