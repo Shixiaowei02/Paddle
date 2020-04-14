@@ -23,31 +23,26 @@ class ThreadLocalAllocation : public Allocation {
   ThreadLocalAllocation(void* ptr, size_t size, platform::Place place)
       : Allocation(ptr, size, place) {}
 
-  void SetThreadLocalAllocator(std::shared_ptr<Allocator> allocator) {
+  void SetThreadLocalAllocatorImpl(
+      std::shared_ptr<ThreadLocalAllocatorImpl> allocator) {
     allocator_ = allocator;
   }
 
  private:
-  std::shared_ptr<Allocator> allocator_;
+  std::shared_ptr<ThreadLocalAllocatorImpl> allocator_;
 };
 
-Allocation* ThreadLocalAllocator::AllocateImpl(size_t size) {
+Allocation* ThreadLocalAllocatorImpl::AllocateImpl(size_t size) {
   void* ptr = buddy_allocator_->Alloc(size);
   auto* tl_allocation = new ThreadLocalAllocation(ptr, size, place_);
-  tl_allocation->SetThreadLocalAllocator(shared_from_this());
+  tl_allocation->SetThreadLocalAllocatorImpl(shared_from_this());
   return tl_allocation;
 }
 
-void ThreadLocalAllocator::FreeImpl(Allocation* allocation) {
+void ThreadLocalAllocatorImpl::FreeImpl(Allocation* allocation) {
   auto* tl_allocation = static_cast<ThreadLocalAllocation*>(allocation);
   buddy_allocator_->Free(tl_allocation->ptr());
   delete tl_allocation;
-}
-
-const std::shared_ptr<Allocator>& GetThreadLocalAllocator() {
-  static thread_local std::shared_ptr<Allocator> allocator(
-      new ThreadLocalAllocator(platform::CUDAPlace()));
-  return allocator;
 }
 
 }  // namespace allocation
