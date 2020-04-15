@@ -491,6 +491,8 @@ struct AnalysisConfig {
   PassStrategy* pass_builder() const;
   void PartiallyRelease();
 
+  void BindGpuStreamToThread(bool high_priority = false);
+
  protected:
   // Update the config.
   void Update();
@@ -569,6 +571,9 @@ struct AnalysisConfig {
 
   bool use_xpu_{false};
   int xpu_l3_workspace_size_;
+
+  bool thread_local_stream_{false};
+  bool high_priority_stream_{false};
 
   // mkldnn related.
   int mkldnn_cache_capacity_{0};
