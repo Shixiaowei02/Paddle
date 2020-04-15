@@ -118,7 +118,11 @@ class GPUBuddyAllocatorList {
 
  public:
   static GPUBuddyAllocatorList *Instance() {
+#ifndef PADDLE_ON_INFERENCE
     static auto *instance = CreateNewInstance();
+#else
+    static thread_local auto *instance = CreateNewInstance();
+#endif
     return instance;
   }
 
@@ -329,7 +333,7 @@ class NaiveBestFitAllocation : public Allocation {
 
 Allocation *NaiveBestFitAllocator::AllocateImpl(size_t size) {
   void *ptr = boost::apply_visitor(legacy::AllocVisitor(size), place_);
-  auto *tmp_alloc = new Allocation(ptr, size, place_);
+  auto *tmp_alloc = new NaiveBestFitAllocation(ptr, size, place_);
   tmp_alloc->SetNaiveBestFitAllocator(shared_from_this());
   platform::MemEvenRecorder::Instance().PushMemRecord(
       static_cast<void *>(tmp_alloc), place_, size);
