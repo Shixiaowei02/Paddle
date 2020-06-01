@@ -264,6 +264,7 @@ void LiteSubgraphPass::SetUpEngine(
       // input tensor of the Lite engine is located, and then affects
       // whether tensor sharing is feasible.
       paddle::lite::Place({target_type, precision_type}),
+      paddle::lite::Place({target_type, PRECISION(kInt64)}),
       paddle::lite::Place({target_type, PRECISION(kFloat)}),
       paddle::lite::Place({TARGET(kHost), PRECISION(kFloat)}),
   };
