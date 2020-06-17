@@ -428,6 +428,8 @@ void BindAnalysisConfig(py::module *m) {
            py::arg("passes_filter") = std::vector<std::string>(),
            py::arg("ops_filter") = std::vector<std::string>())
       .def("lite_engine_enabled", &AnalysisConfig::lite_engine_enabled)
+      .def("enable_xpu", &AnalysisConfig::EnableXpu,
+           py::arg("l3_workspace_size") = 0xfffc00)
       .def("switch_ir_debug", &AnalysisConfig::SwitchIrDebug,
            py::arg("x") = true)
       .def("enable_mkldnn", &AnalysisConfig::EnableMKLDNN)
