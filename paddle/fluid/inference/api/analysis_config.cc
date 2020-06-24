@@ -160,6 +160,7 @@ AnalysisConfig::AnalysisConfig(const AnalysisConfig &other) {
   CP_MEMBER(serialized_info_cache_);
 
   CP_MEMBER(thread_local_stream_);
+  CP_MEMBER(high_priority_stream_);
 
   if (use_gpu_) {
     pass_builder_.reset(new GpuPassStrategy(
@@ -413,6 +414,9 @@ std::string AnalysisConfig::SerializeInfoCache() {
 
   ss << thread_local_stream_;
 
+  ss << thread_local_stream_;
+  ss << high_priority_stream_;
+
   return ss.str();
 }
 
@@ -505,6 +509,9 @@ void AnalysisConfig::PartiallyRelease() {
   params_file_.shrink_to_fit();
 }
 
-void AnalysisConfig::EnableGpuMultiStream() { thread_local_stream_ = true; }
+void AnalysisConfig::BindGpuStreamToThread(bool high_priority) {
+  thread_local_stream_ = true;
+  high_priority_stream_ = high_priority;
+}
 
 }  // namespace paddle
