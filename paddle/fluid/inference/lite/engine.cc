@@ -51,8 +51,9 @@ paddle::lite::Predictor* EngineManager::Create(const std::string& name,
 #endif
   } else if (cfg.valid_places.front().target == TARGET(kXPU)) {
 #ifdef PADDLE_WITH_XPU
-    paddle::lite::Context<TARGET(kXPU)>::SetWorkspaceL3Size(
-        cfg.xpu_l3_workspace_size);
+    paddle::lite::TargetWrapper<TARGET(kXPU)>::workspace_l3_size_per_thread = cfg.xpu_l3_workspace_size;
+    // paddle::lite::Context<TARGET(kXPU)>::SetWorkspaceL3Size(
+    //     cfg.xpu_l3_workspace_size);
 #endif
   }
   auto* p = new paddle::lite::Predictor();

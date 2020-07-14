@@ -28,6 +28,7 @@
 #include "lite/core/device_info.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/backends/xpu/target_wrapper.h"
 #pragma GCC diagnostic pop
 
 namespace paddle {
