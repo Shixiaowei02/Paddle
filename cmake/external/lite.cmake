@@ -18,6 +18,14 @@ if(NOT LINUX OR NOT WITH_MKL)
   return()
 endif()
 
+if(XPU_SDK_ROOT)
+  set(LITE_WITH_XPU ON)
+  include_directories("${XPU_SDK_ROOT}/XTDK/include")
+  include_directories("${XPU_SDK_ROOT}/XTCL/include")
+  add_definitions(-DPADDLE_WITH_XPU)
+  LINK_DIRECTORIES("${XPU_SDK_ROOT}/XTDK/shlib/")
+endif()
+
 if (NOT LITE_SOURCE_DIR OR NOT LITE_BINARY_DIR)
   include(ExternalProject)
   set(LITE_PROJECT extern_lite)
@@ -47,6 +55,8 @@ if (NOT LITE_SOURCE_DIR OR NOT LITE_BINARY_DIR)
                          -DCUDNN_ROOT=${CUDNN_ROOT}
                          -DLITE_WITH_STATIC_CUDA=OFF
                          -DCUDA_ARCH_NAME=${CUDA_ARCH_NAME}
+                         -DLITE_WITH_XPU=${LITE_WITH_XPU}
+                         -DXPU_SDK_ROOT=${XPU_SDK_ROOT}
                          -DLITE_WITH_ARM=OFF)
 
   ExternalProject_Add(
@@ -93,12 +103,5 @@ function(external_lite_libs alias path)
 endfunction()
 
 external_lite_libs(lite_full_static ${LITE_BINARY_DIR}/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so)
-
-if(XPU_SDK_ROOT)
-  include_directories("${XPU_SDK_ROOT}/XTDK/include")
-  include_directories("${XPU_SDK_ROOT}/XTCL/include")
-  add_definitions(-DPADDLE_WITH_XPU)
-  LINK_DIRECTORIES("${XPU_SDK_ROOT}/XTDK/shlib/")
-endif()
 
 add_definitions(-DPADDLE_WITH_LITE)
