@@ -54,10 +54,36 @@ __device__ __forceinline__ float ToFloat<float>(float a) {
   return a;
 }
 
+template <>
+__device__ __forceinline__ float2 ToFloat2<float2>(float2 a) {
+  return a;
+}
+
+template <>
+__device__ __forceinline__ float2 FloatsToPair<float2>(const float a,
+                                                       const float b) {
+  return make_float2(a, b);
+}
+
+__inline__ __device__ float2 operator+(const float2 &a, const float2 &b) {
+  return make_float2(a.x + b.x, a.y + b.y);
+}
+
 #ifdef SUPPORTS_CUDA_FP16
 template <>
 __device__ __forceinline__ float ToFloat<half>(half a) {
   return __half2float(a);
+}
+
+template <>
+__device__ __forceinline__ float2 ToFloat2<__half2>(__half2 a) {
+  return __half22float2(a);
+}
+
+template <>
+__device__ __forceinline__ __half2 FloatsToPair<__half2>(const float a,
+                                                         const float b) {
+  return __floats2half2_rn(a, b);
 }
 #endif
 
