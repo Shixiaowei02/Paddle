@@ -27,7 +27,13 @@ template <typename T>
 __device__ __forceinline__ float ToFloat(T a);
 
 template <typename T>
+__device__ __forceinline__ float2 ToFloat2(T a);
+
+template <typename T>
 __device__ __forceinline__ T exp_func(T a);
+
+template <typename T>
+__device__ __forceinline__ T FloatsToPair(const float a, const float b);
 
 template <typename T>
 struct KeyValuePair;
