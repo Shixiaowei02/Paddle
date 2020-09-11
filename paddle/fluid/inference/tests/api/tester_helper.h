@@ -270,7 +270,7 @@ void SetFakeImageInput(std::vector<std::vector<PaddleTensor>> *inputs,
                        const int continuous_inuput_index = 0) {
   // Set fake_image_data
   PADDLE_ENFORCE_EQ(FLAGS_test_all_data, 0,
-                    platform::errors::InvalidArgument(
+                    paddle::platform::errors::InvalidArgument(
                         "In SetFakeImageInput, expected test_all_data = false, "
                         "but now test_all_data=",
                         FLAGS_test_all_data));
@@ -288,7 +288,7 @@ void SetFakeImageInput(std::vector<std::vector<PaddleTensor>> *inputs,
   if (feed_names) {
     PADDLE_ENFORCE_EQ(
         feed_names->size(), feed_target_shapes.size(),
-        platform::errors::InvalidArgument(
+        paddle::platform::errors::InvalidArgument(
             "The size of feeds_names and size of "
             "feed_target_shapes must be equal, but now feeds_names "
             "size is %d and feed_target_shapes size is %d",
@@ -509,14 +509,14 @@ void SummarizeAccuracy(float avg_acc_fp32, float avg_acc_int8,
                        int compared_idx) {
   PADDLE_ENFORCE_LE(
       compared_idx, 2,
-      platform::errors::InvalidArgument(
+      paddle::platform::errors::InvalidArgument(
           "The compared_idx should be <= 2. But received compared_idx = %d. "
           "For top1 accuracy, set compared_idx = 1; For top5 accuracy or mean "
           "Average Precision (mAP), set compared_idx = 2.",
           compared_idx));
   PADDLE_ENFORCE_GE(
       compared_idx, 1,
-      platform::errors::InvalidArgument(
+      paddle::platform::errors::InvalidArgument(
           "The compared_idx should be >= 1. But received compared_idx = %d. "
           "For top1 accuracy, set compared_idx = 1; For top5 accuracy or mean "
           "Average Precision (mAP), set compared_idx = 2.",
@@ -551,7 +551,7 @@ float CompareAccuracyOne(
     const std::vector<std::vector<PaddleTensor>> &output_slots,
     int compared_idx) {
   PADDLE_ENFORCE_GT(output_slots.size(), 0,
-                    platform::errors::InvalidArgument(
+                    paddle::platform::errors::InvalidArgument(
                         "The accuracy vector is empty. The accuracy vector "
                         "size should be bigger than 0"));
 
@@ -562,7 +562,7 @@ float CompareAccuracyOne(
       case 1:
         PADDLE_ENFORCE_GE(
             output_slots[i].size(), 2UL,
-            platform::errors::InvalidArgument(
+            paddle::platform::errors::InvalidArgument(
                 "To achieve top 1 accuracy, output_slots size "
                 "must be bigger than or equal to 2, but now the size is %d",
                 output_slots[i].size()));
@@ -570,7 +570,7 @@ float CompareAccuracyOne(
       case 2:
         PADDLE_ENFORCE_GE(
             output_slots[i].size(), 3UL,
-            platform::errors::InvalidArgument(
+            paddle::platform::errors::InvalidArgument(
                 "To achieve top 5 accuracy or mean Average "
                 "Precision (mAP), output_slots size must be "
                 "bigger than or equal to 3, but now the size is %d",
@@ -650,11 +650,11 @@ void CompareNativeAndAnalysis(
   TestOneThreadPrediction(config, inputs, &native_outputs, false);
   TestOneThreadPrediction(config, inputs, &analysis_outputs, true);
   PADDLE_ENFORCE_GT(native_outputs.size(), 0,
-                    platform::errors::InvalidArgument(
+                    paddle::platform::errors::InvalidArgument(
                         "The native outputs is empty. The native outputs "
                         "vector size must be bigger than 0"));
   PADDLE_ENFORCE_GT(analysis_outputs.size(), 0,
-                    platform::errors::InvalidArgument(
+                    paddle::platform::errors::InvalidArgument(
                         "The analysis outputs is empty. The analysis outputs "
                         "vector size must be bigger than 0"));
   CompareResult(analysis_outputs.back(), native_outputs.back());
@@ -666,7 +666,7 @@ void CompareQuantizedAndAnalysis(
     const int compared_idx = 1) {
   PADDLE_ENFORCE_EQ(
       inputs[0][0].shape[0], FLAGS_batch_size,
-      platform::errors::InvalidArgument(
+      paddle::platform::errors::InvalidArgument(
           "Input data has to be packed batch by batch. The batchsize is set to "
           "%d, but the real input is packed with batchsize = %d",
           FLAGS_batch_size, inputs[0][0].shape[0]));
@@ -706,7 +706,7 @@ void CompareAnalysisAndAnalysis(
     const int compared_idx = 1) {
   PADDLE_ENFORCE_EQ(
       inputs[0][0].shape[0], FLAGS_batch_size,
-      platform::errors::InvalidArgument(
+      paddle::platform::errors::InvalidArgument(
           "Input data has to be packed batch by batch. The batchsize is set to "
           "%d, but the real input is packed with batchsize = %d",
           FLAGS_batch_size, inputs[0][0].shape[0]));
