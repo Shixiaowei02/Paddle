@@ -20,7 +20,7 @@ limitations under the License. */
 #include <utility>
 #include <vector>
 
-#include <boost/any.hpp>
+#include <boost/variant.hpp>
 #include "paddle/fluid/framework/framework.pb.h"
 #include "paddle/fluid/framework/op_version_proto.h"
 #include "paddle/fluid/platform/enforce.h"
@@ -29,20 +29,33 @@ namespace paddle {
 namespace framework {
 namespace compatible {
 
+using OpAttrVariantT = boost::variant<
+  bool,                    /* AttrType::BOOL */
+  float,                   /* AttrType::FLOAT */
+  int32_t,                 /* AttrType::INT */
+  int64_t,                 /* AttrType::LONGS */
+  std::string,             /* AttrType::STRING */
+  std::vector<bool>,       /* AttrType::BOOLS */
+  std::vector<float>,      /* AttrType::FLOATS */
+  std::vector<int32_t>,    /* AttrType::INTS */
+  std::vector<int64_t>,    /* AttrType::LONGS */
+  std::vector<std::string> /* AttrType::STRINGS */
+>;
+
 struct OpUpdateInfo {};
 
 struct OpAttrInfo : OpUpdateInfo {
   OpAttrInfo(const std::string& name, const std::string& remark,
-             const boost::any& default_value)
+             const OpAttrVariantT& default_value)
       : name_(name), default_value_(default_value), remark_(remark) {}
 
   const std::string& get_name() const { return name_; }
-  const boost::any& get_default_value() const { return default_value_; }
+  const OpAttrVariantT& get_default_value() const { return default_value_; }
   const std::string& get_remark() const { return remark_; }
 
  private:
   std::string name_;
-  boost::any default_value_;
+  OpAttrVariantT default_value_;
   std::string remark_;
 };
 
@@ -121,14 +134,14 @@ class BugfixWithBehaviorChanged : public OpUpdateRecord {
 class OpVersionDesc {
  public:
   OpVersionDesc& ModifyAttr(const std::string& name, const std::string& remark,
-                            const boost::any& default_value) {
+                            const OpAttrVariantT& default_value) {
     infos_.push_back(std::shared_ptr<OpUpdateRecord>(
         new compatible::ModifyAttr(OpAttrInfo(name, remark, default_value))));
     return *this;
   }
 
   OpVersionDesc& NewAttr(const std::string& name, const std::string& remark,
-                         const boost::any& default_value) {
+                         const OpAttrVariantT& default_value) {
     infos_.push_back(std::shared_ptr<OpUpdateRecord>(
         new compatible::NewAttr(OpAttrInfo(name, remark, default_value))));
     return *this;
