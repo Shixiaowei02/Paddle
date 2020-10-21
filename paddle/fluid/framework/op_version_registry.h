@@ -20,7 +20,7 @@ limitations under the License. */
 #include <utility>
 #include <vector>
 
-#include <boost/any.hpp>
+#include <boost/variant.hpp>
 #include "paddle/fluid/framework/framework.pb.h"
 #include "paddle/fluid/framework/op_version_proto.h"
 #include "paddle/fluid/platform/enforce.h"
@@ -29,97 +29,139 @@ namespace paddle {
 namespace framework {
 namespace compatible {
 
-struct OpUpdateRecord {
-  enum class Type {
-    kInvalid = 0,
-    kModifyAttr,
-    kNewAttr,
-    kNewInput,
-    kNewOutput,
-    kBugfixWithBehaviorChanged,
-  };
-  Type type_;
+using OpAttrVariantT =
+    boost::variant<bool,                    /* AttrType::BOOL */
+                   float,                   /* AttrType::FLOAT */
+                   int32_t,                 /* AttrType::INT */
+                   int64_t,                 /* AttrType::LONGS */
+                   std::string,             /* AttrType::STRING */
+                   std::vector<bool>,       /* AttrType::BOOLS */
+                   std::vector<float>,      /* AttrType::FLOATS */
+                   std::vector<int32_t>,    /* AttrType::INTS */
+                   std::vector<int64_t>,    /* AttrType::LONGS */
+                   std::vector<std::string> /* AttrType::STRINGS */
+                   >;
+
+struct OpUpdateInfo {};
+
+struct OpAttrInfo : OpUpdateInfo {
+  OpAttrInfo(const std::string& name, const std::string& remark,
+             const OpAttrVariantT& default_value)
+      : name_(name), default_value_(default_value), remark_(remark) {}
+
+  const std::string& get_name() const { return name_; }
+  const OpAttrVariantT& get_default_value() const { return default_value_; }
+  const std::string& get_remark() const { return remark_; }
+
+ private:
+  std::string name_;
+  OpAttrVariantT default_value_;
   std::string remark_;
 };
 
-struct ModifyAttr : OpUpdateRecord {
-  ModifyAttr(const std::string& name, const std::string& remark,
-             const boost::any& default_value)
-      : OpUpdateRecord({Type::kModifyAttr, remark}),
-        name_(name),
-        default_value_(default_value) {
-    // TODO(Shixiaowei02): Check the data type with proto::OpDesc.
-  }
+struct OpInputOutputInfo : OpUpdateInfo {
+  OpInputOutputInfo(const std::string& name, const std::string& remark)
+      : name_(name), remark_(remark) {}
+
+  const std::string& get_name() const { return name_; }
+  const std::string& get_remark() const { return remark_; }
 
  private:
   std::string name_;
-  boost::any default_value_;
+  std::string remark_;
 };
 
-struct NewAttr : OpUpdateRecord {
-  NewAttr(const std::string& name, const std::string& remark,
-          const boost::any& default_value)
-      : OpUpdateRecord({Type::kNewAttr, remark}),
-        name_(name),
-        default_value_(default_value) {}
+struct OpBugfixInfo : OpUpdateInfo {
+  explicit OpBugfixInfo(const std::string& remark) : remark_(remark) {}
+
+  const std::string& get_remark() const { return remark_; }
 
  private:
-  std::string name_;
-  boost::any default_value_;
+  std::string remark_;
 };
 
-struct NewInput : OpUpdateRecord {
-  NewInput(const std::string& name, const std::string& remark)
-      : OpUpdateRecord({Type::kNewInput, remark}), name_(name) {}
+class OpUpdateRecord {
+ public:
+  virtual const OpUpdateInfo& Info() const = 0;
+  virtual ~OpUpdateRecord() = default;
+};
+
+class ModifyAttr : public OpUpdateRecord {
+ public:
+  explicit ModifyAttr(const OpAttrInfo& info) : info_(info) {}
+  const OpAttrInfo& Info() const override { return info_; }
 
  private:
-  std::string name_;
+  OpAttrInfo info_;
 };
 
-struct NewOutput : OpUpdateRecord {
-  NewOutput(const std::string& name, const std::string& remark)
-      : OpUpdateRecord({Type::kNewOutput, remark}), name_(name) {}
+class NewAttr : public OpUpdateRecord {
+ public:
+  explicit NewAttr(const OpAttrInfo& info) : info_(info) {}
+  const OpAttrInfo& Info() const override { return info_; }
 
  private:
-  std::string name_;
+  OpAttrInfo info_;
 };
 
-struct BugfixWithBehaviorChanged : OpUpdateRecord {
-  explicit BugfixWithBehaviorChanged(const std::string& remark)
-      : OpUpdateRecord({Type::kBugfixWithBehaviorChanged, remark}) {}
+class NewInput : public OpUpdateRecord {
+ public:
+  explicit NewInput(const OpInputOutputInfo& info) : info_{info} {}
+  const OpInputOutputInfo& Info() const override { return info_; }
+
+ private:
+  OpInputOutputInfo info_;
+};
+
+class NewOutput : public OpUpdateRecord {
+ public:
+  explicit NewOutput(const OpInputOutputInfo& info) : info_{info} {}
+  const OpInputOutputInfo& Info() const override { return info_; }
+
+ private:
+  OpInputOutputInfo info_;
+};
+
+class BugfixWithBehaviorChanged : public OpUpdateRecord {
+ public:
+  explicit BugfixWithBehaviorChanged(const OpBugfixInfo& info) : info_{info} {}
+  const OpBugfixInfo& Info() const override { return info_; }
+
+ private:
+  OpBugfixInfo info_;
 };
 
 class OpVersionDesc {
  public:
   OpVersionDesc& ModifyAttr(const std::string& name, const std::string& remark,
-                            boost::any default_value) {
+                            const OpAttrVariantT& default_value) {
     infos_.push_back(std::shared_ptr<OpUpdateRecord>(
-        new compatible::ModifyAttr(name, remark, default_value)));
+        new compatible::ModifyAttr(OpAttrInfo(name, remark, default_value))));
     return *this;
   }
 
   OpVersionDesc& NewAttr(const std::string& name, const std::string& remark,
-                         boost::any default_value) {
+                         const OpAttrVariantT& default_value) {
     infos_.push_back(std::shared_ptr<OpUpdateRecord>(
-        new compatible::NewAttr(name, remark, default_value)));
+        new compatible::NewAttr(OpAttrInfo(name, remark, default_value))));
     return *this;
   }
 
   OpVersionDesc& NewInput(const std::string& name, const std::string& remark) {
     infos_.push_back(std::shared_ptr<OpUpdateRecord>(
-        new compatible::NewInput(name, remark)));
+        new compatible::NewInput(OpInputOutputInfo(name, remark))));
     return *this;
   }
 
   OpVersionDesc& NewOutput(const std::string& name, const std::string& remark) {
     infos_.push_back(std::shared_ptr<OpUpdateRecord>(
-        new compatible::NewOutput(name, remark)));
+        new compatible::NewOutput(OpInputOutputInfo(name, remark))));
     return *this;
   }
 
   OpVersionDesc& BugfixWithBehaviorChanged(const std::string& remark) {
     infos_.push_back(std::shared_ptr<OpUpdateRecord>(
-        new compatible::BugfixWithBehaviorChanged(remark)));
+        new compatible::BugfixWithBehaviorChanged(OpBugfixInfo(remark))));
     return *this;
   }
 
@@ -127,23 +169,34 @@ class OpVersionDesc {
   std::vector<std::shared_ptr<OpUpdateRecord>> infos_;
 };
 
+class OpCheckpoint {
+ public:
+  OpCheckpoint(const std::string& note, const OpVersionDesc& op_version_desc)
+      : note_(note), op_version_desc_(op_version_desc) {}
+  const std::string& get_note() const { return note_; }
+  const OpVersionDesc& get_op_version_desc() { return op_version_desc_; }
+
+ private:
+  std::string note_;
+  OpVersionDesc op_version_desc_;
+};
+
 class OpVersion {
  public:
   OpVersion& AddCheckpoint(const std::string& note,
                            const OpVersionDesc& op_version_desc) {
-    checkpoints_.push_back(Checkpoint({note, op_version_desc}));
+    checkpoints_.push_back(OpCheckpoint({note, op_version_desc}));
     return *this;
   }
   uint32_t GetVersionID() const {
     return static_cast<uint32_t>(checkpoints_.size());
   }
+  const std::vector<OpCheckpoint> get_checkpoints() const {
+    return checkpoints_;
+  }
 
  private:
-  struct Checkpoint {
-    std::string note_;
-    OpVersionDesc op_version_desc_;
-  };
-  std::vector<Checkpoint> checkpoints_;
+  std::vector<OpCheckpoint> checkpoints_;
 };
 
 class OpVersionRegistrar {
