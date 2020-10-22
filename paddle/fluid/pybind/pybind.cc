@@ -120,6 +120,18 @@ PYBIND11_MAKE_OPAQUE(paddle::framework::FetchType);
 
 namespace paddle {
 namespace pybind {
+
+struct SomeVisitor : public boost::static_visitor<>
+{
+    void operator()(bool f0) const { std::cout << "bool: " << f0 << std::endl;  }
+    void operator()(const std::vector<float>& f1) const {
+      std::cout << "std::vector<float>: " << std::endl;
+      for (const auto& element: f1) {
+        std::cout << "  -- " << element << std::endl;
+      }
+    }
+};
+
 bool IsCompiledWithCUDA() {
 #ifndef PADDLE_WITH_CUDA
   return false;
@@ -1702,6 +1714,11 @@ All parameter, weight, gradient are variables in Paddle.
   m.def("load_op_library", framework::LoadOpLib);
   m.def("init_devices",
         [](bool init_p2p) { framework::InitDevices(init_p2p); });
+  m.def("return_variant", [](boost::variant<bool, std::vector<float>> a) {
+    std::cout << "a.type().name(): " << a.type().name() << std::endl;
+    boost::apply_visitor(SomeVisitor(), a);
+    return boost::variant<bool, std::vector<float>>(std::vector<float>{2.5f});
+  });
 
   m.def("is_compiled_with_cuda", IsCompiledWithCUDA);
   m.def("is_compiled_with_xpu", IsCompiledWithXPU);

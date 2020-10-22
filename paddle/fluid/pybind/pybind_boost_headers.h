@@ -47,6 +47,7 @@ struct PYBIND11_HIDDEN paddle_variant_caster_visitor
 
   template <class T>
   handle operator()(T const &src) const {
+        LOG(INFO) << "static_visitor";
     return make_caster<T>::cast(src, policy, parent);
   }
 };
@@ -62,14 +63,15 @@ struct paddle_variant_caster<V<Ts...>> {
   typename std::enable_if<
       !std::is_same<T, boost::detail::variant::void_>::value, bool>::type
   try_load(handle src, bool convert) {
+    LOG(INFO) << "try_load";
     auto caster = make_caster<T>();
     if (!load_success_ && caster.load(src, convert)) {
       load_success_ = true;
-
+/*
       if (std::is_same<T, std::vector<float>>::value) {
         auto caster_ints = make_caster<std::vector<int64_t>>();
         if (caster_ints.load(src, convert)) {
-          VLOG(4) << "This value are floats and int64_ts satisfy "
+          LOG(INFO) << "This value are floats and int64_ts satisfy "
                      "simultaneously, will set it's type to "
                      "std::vector<int64_t>";
           value = cast_op<std::vector<int64_t>>(caster_ints);
@@ -80,12 +82,13 @@ struct paddle_variant_caster<V<Ts...>> {
       if (std::is_same<T, float>::value) {
         auto caster_int64 = make_caster<int64_t>();
         if (caster_int64.load(src, convert)) {
-          VLOG(4) << "this value are float and int64 satisfy simula.";
+          LOG(INFO) << "this value are float and int64 satisfy simula.";
           value = cast_op<int64_t>(caster_int64);
           return true;
         }
       }
-
+*/
+      LOG(INFO) << "Here!!";
       value = cast_op<T>(caster);
       return true;
     }
@@ -96,10 +99,12 @@ struct paddle_variant_caster<V<Ts...>> {
   typename std::enable_if<std::is_same<T, boost::detail::variant::void_>::value,
                           bool>::type
   try_load(handle src, bool convert) {
+    LOG(INFO) << "try_load";
     return false;
   }
 
   bool load(handle src, bool convert) {
+    LOG(INFO) << "load";
     auto unused = {false, try_load<Ts>(src, convert)...};
     (void)(unused);
     return load_success_;
@@ -107,6 +112,7 @@ struct paddle_variant_caster<V<Ts...>> {
 
   static handle cast(Type const &src, return_value_policy policy,
                      handle parent) {
+    LOG(INFO) << "cast";
     paddle_variant_caster_visitor visitor(policy, parent);
     return boost::apply_visitor(visitor, src);
   }
