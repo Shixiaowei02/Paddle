@@ -47,7 +47,7 @@ struct OpUpdateInfo {};
 struct OpAttrInfo : OpUpdateInfo {
   OpAttrInfo(const std::string& name, const std::string& remark,
              const OpAttrVariantT& default_value)
-      : name_(name), default_value_(default_value), remark_(remark) {}
+      : name_{name}, default_value_{default_value}, remark_{remark} {}
 
   const std::string& get_name() const { return name_; }
   const OpAttrVariantT& get_default_value() const { return default_value_; }
@@ -61,7 +61,7 @@ struct OpAttrInfo : OpUpdateInfo {
 
 struct OpInputOutputInfo : OpUpdateInfo {
   OpInputOutputInfo(const std::string& name, const std::string& remark)
-      : name_(name), remark_(remark) {}
+      : name_{name}, remark_{remark} {}
 
   const std::string& get_name() const { return name_; }
   const std::string& get_remark() const { return remark_; }
@@ -72,7 +72,7 @@ struct OpInputOutputInfo : OpUpdateInfo {
 };
 
 struct OpBugfixInfo : OpUpdateInfo {
-  explicit OpBugfixInfo(const std::string& remark) : remark_(remark) {}
+  explicit OpBugfixInfo(const std::string& remark) : remark_{remark} {}
 
   const std::string& get_remark() const { return remark_; }
 
@@ -88,7 +88,7 @@ class OpUpdateRecord {
 
 class ModifyAttr : public OpUpdateRecord {
  public:
-  explicit ModifyAttr(const OpAttrInfo& info) : info_(info) {}
+  explicit ModifyAttr(const OpAttrInfo& info) : info_{info} {}
   const OpAttrInfo& Info() const override { return info_; }
 
  private:
@@ -97,7 +97,7 @@ class ModifyAttr : public OpUpdateRecord {
 
 class NewAttr : public OpUpdateRecord {
  public:
-  explicit NewAttr(const OpAttrInfo& info) : info_(info) {}
+  explicit NewAttr(const OpAttrInfo& info) : info_{info} {}
   const OpAttrInfo& Info() const override { return info_; }
 
  private:
@@ -172,7 +172,7 @@ class OpVersionDesc {
 class OpCheckpoint {
  public:
   OpCheckpoint(const std::string& note, const OpVersionDesc& op_version_desc)
-      : note_(note), op_version_desc_(op_version_desc) {}
+      : note_{note}, op_version_desc_{op_version_desc} {}
   const std::string& get_note() const { return note_; }
   const OpVersionDesc& get_op_version_desc() { return op_version_desc_; }
 
@@ -185,7 +185,7 @@ class OpVersion {
  public:
   OpVersion& AddCheckpoint(const std::string& note,
                            const OpVersionDesc& op_version_desc) {
-    checkpoints_.push_back(OpCheckpoint({note, op_version_desc}));
+    checkpoints_.push_back(OpCheckpoint{note, op_version_desc});
     return *this;
   }
   uint32_t GetVersionID() const {
