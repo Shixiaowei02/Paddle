@@ -49,9 +49,9 @@ struct OpAttrInfo : OpUpdateInfo {
              const OpAttrVariantT& default_value)
       : name_{name}, default_value_{default_value}, remark_{remark} {}
 
-  const std::string& get_name() const { return name_; }
-  const OpAttrVariantT& get_default_value() const { return default_value_; }
-  const std::string& get_remark() const { return remark_; }
+  const std::string& name() const { return name_; }
+  const OpAttrVariantT& default_value() const { return default_value_; }
+  const std::string& remark() const { return remark_; }
 
  private:
   std::string name_;
@@ -63,8 +63,8 @@ struct OpInputOutputInfo : OpUpdateInfo {
   OpInputOutputInfo(const std::string& name, const std::string& remark)
       : name_{name}, remark_{remark} {}
 
-  const std::string& get_name() const { return name_; }
-  const std::string& get_remark() const { return remark_; }
+  const std::string& name() const { return name_; }
+  const std::string& remark() const { return remark_; }
 
  private:
   std::string name_;
@@ -74,107 +74,106 @@ struct OpInputOutputInfo : OpUpdateInfo {
 struct OpBugfixInfo : OpUpdateInfo {
   explicit OpBugfixInfo(const std::string& remark) : remark_{remark} {}
 
-  const std::string& get_remark() const { return remark_; }
+  const std::string& remark() const { return remark_; }
 
  private:
   std::string remark_;
 };
 
-class OpUpdateRecord {
- public:
-  virtual const OpUpdateInfo& Info() const = 0;
-  virtual ~OpUpdateRecord() = default;
+enum class OpUpdateType {
+  kInvalid = 0,
+  kModifyAttr,
+  kNewAttr,
+  kNewInput,
+  kNewOutput,
+  kBugfixWithBehaviorChanged,
 };
 
-class ModifyAttr : public OpUpdateRecord {
+class OpUpdateBase {
  public:
-  explicit ModifyAttr(const OpAttrInfo& info) : info_{info} {}
-  const OpAttrInfo& Info() const override { return info_; }
-
- private:
-  OpAttrInfo info_;
+  virtual const OpUpdateInfo& info() const = 0;
+  virtual const OpUpdateType& type() const = 0;
+  virtual ~OpUpdateBase() = default;
 };
 
-class NewAttr : public OpUpdateRecord {
+inline const OpUpdateInfo& get_op_update_info(const OpUpdateBase& o) {
+  return o.info();
+}
+
+inline const OpUpdateType& get_op_update_type(const OpUpdateBase& o) {
+  return o.type();
+}
+
+template <typename InfoType, OpUpdateType UpdateType>
+class OpUpdate : public OpUpdateBase {
  public:
-  explicit NewAttr(const OpAttrInfo& info) : info_{info} {}
-  const OpAttrInfo& Info() const override { return info_; }
+  explicit OpUpdate(const InfoType& info) : info_{info} {}
+  const InfoType& info() const override { return info_; }
+  const OpUpdateType& type() const override { return update_type_; }
 
  private:
-  OpAttrInfo info_;
-};
-
-class NewInput : public OpUpdateRecord {
- public:
-  explicit NewInput(const OpInputOutputInfo& info) : info_{info} {}
-  const OpInputOutputInfo& Info() const override { return info_; }
-
- private:
-  OpInputOutputInfo info_;
-};
-
-class NewOutput : public OpUpdateRecord {
- public:
-  explicit NewOutput(const OpInputOutputInfo& info) : info_{info} {}
-  const OpInputOutputInfo& Info() const override { return info_; }
-
- private:
-  OpInputOutputInfo info_;
-};
-
-class BugfixWithBehaviorChanged : public OpUpdateRecord {
- public:
-  explicit BugfixWithBehaviorChanged(const OpBugfixInfo& info) : info_{info} {}
-  const OpBugfixInfo& Info() const override { return info_; }
-
- private:
-  OpBugfixInfo info_;
+  OpUpdateType update_type_;
+  InfoType info_;
 };
 
 class OpVersionDesc {
  public:
   OpVersionDesc& ModifyAttr(const std::string& name, const std::string& remark,
                             const OpAttrVariantT& default_value) {
-    infos_.push_back(std::shared_ptr<OpUpdateRecord>(
-        new compatible::ModifyAttr(OpAttrInfo(name, remark, default_value))));
+    infos_.push_back(
+        std::shared_ptr<OpUpdate<OpAttrInfo, OpUpdateType::kModifyAttr>>(
+            new OpUpdate<OpAttrInfo, OpUpdateType::kModifyAttr>(
+                OpAttrInfo(name, remark, default_value))));
     return *this;
   }
 
   OpVersionDesc& NewAttr(const std::string& name, const std::string& remark,
                          const OpAttrVariantT& default_value) {
-    infos_.push_back(std::shared_ptr<OpUpdateRecord>(
-        new compatible::NewAttr(OpAttrInfo(name, remark, default_value))));
+    infos_.push_back(
+        std::shared_ptr<OpUpdate<OpAttrInfo, OpUpdateType::kNewAttr>>(
+            new OpUpdate<OpAttrInfo, OpUpdateType::kNewAttr>(
+                OpAttrInfo(name, remark, default_value))));
     return *this;
   }
 
   OpVersionDesc& NewInput(const std::string& name, const std::string& remark) {
-    infos_.push_back(std::shared_ptr<OpUpdateRecord>(
-        new compatible::NewInput(OpInputOutputInfo(name, remark))));
+    infos_.push_back(
+        std::shared_ptr<OpUpdate<OpInputOutputInfo, OpUpdateType::kNewInput>>(
+            new OpUpdate<OpInputOutputInfo, OpUpdateType::kNewInput>(
+                OpInputOutputInfo(name, remark))));
     return *this;
   }
 
   OpVersionDesc& NewOutput(const std::string& name, const std::string& remark) {
-    infos_.push_back(std::shared_ptr<OpUpdateRecord>(
-        new compatible::NewOutput(OpInputOutputInfo(name, remark))));
+    infos_.push_back(
+        std::shared_ptr<OpUpdate<OpInputOutputInfo, OpUpdateType::kNewOutput>>(
+            new OpUpdate<OpInputOutputInfo, OpUpdateType::kNewOutput>(
+                OpInputOutputInfo(name, remark))));
     return *this;
   }
 
   OpVersionDesc& BugfixWithBehaviorChanged(const std::string& remark) {
-    infos_.push_back(std::shared_ptr<OpUpdateRecord>(
-        new compatible::BugfixWithBehaviorChanged(OpBugfixInfo(remark))));
+    infos_.push_back(
+        std::shared_ptr<
+            OpUpdate<OpBugfixInfo, OpUpdateType::kBugfixWithBehaviorChanged>>(
+            new OpUpdate<OpBugfixInfo,
+                         OpUpdateType::kBugfixWithBehaviorChanged>(
+                OpBugfixInfo(remark))));
     return *this;
   }
 
+  const std::vector<std::shared_ptr<OpUpdateBase>>& infos() { return infos_; }
+
  private:
-  std::vector<std::shared_ptr<OpUpdateRecord>> infos_;
+  std::vector<std::shared_ptr<OpUpdateBase>> infos_;
 };
 
 class OpCheckpoint {
  public:
   OpCheckpoint(const std::string& note, const OpVersionDesc& op_version_desc)
       : note_{note}, op_version_desc_{op_version_desc} {}
-  const std::string& get_note() const { return note_; }
-  const OpVersionDesc& get_op_version_desc() { return op_version_desc_; }
+  const std::string& note() const { return note_; }
+  const OpVersionDesc& version_desc() { return op_version_desc_; }
 
  private:
   std::string note_;
@@ -188,12 +187,10 @@ class OpVersion {
     checkpoints_.push_back(OpCheckpoint{note, op_version_desc});
     return *this;
   }
-  uint32_t GetVersionID() const {
+  uint32_t version_id() const {
     return static_cast<uint32_t>(checkpoints_.size());
   }
-  const std::vector<OpCheckpoint> get_checkpoints() const {
-    return checkpoints_;
-  }
+  const std::vector<OpCheckpoint> checkpoints() const { return checkpoints_; }
 
  private:
   std::vector<OpCheckpoint> checkpoints_;
@@ -216,12 +213,12 @@ class OpVersionRegistrar {
   const std::unordered_map<std::string, OpVersion>& GetVersionMap() {
     return op_version_map_;
   }
-  uint32_t GetVersionID(const std::string& op_type) const {
+  uint32_t version_id(const std::string& op_type) const {
     auto it = op_version_map_.find(op_type);
     if (it == op_version_map_.end()) {
       return 0;
     }
-    return it->second.GetVersionID();
+    return it->second.version_id();
   }
 
  private:
@@ -231,11 +228,15 @@ class OpVersionRegistrar {
   OpVersionRegistrar& operator=(const OpVersionRegistrar&) = delete;
 };
 
+inline const std::unordered_map<std::string, OpVersion>& get_op_version_map() {
+  return OpVersionRegistrar::GetInstance().GetVersionMap();
+}
+
 inline void SaveOpVersions(
     const std::unordered_map<std::string, OpVersion>& src,
     pb::OpVersionMap* dst) {
   for (const auto& pair : src) {
-    (*dst)[pair.first].SetVersionID(pair.second.GetVersionID());
+    (*dst)[pair.first].SetVersionID(pair.second.version_id());
   }
 }
 
@@ -252,7 +253,7 @@ class OpVersionComparator {
                                              uint32_t target_version)   \
         : op_name_(op_name), target_version_(target_version) {}         \
     virtual bool operator()() {                                         \
-      return OpVersionRegistrar::GetInstance().GetVersionID(op_name_)   \
+      return OpVersionRegistrar::GetInstance().version_id(op_name_)     \
           cmp_math target_version_;                                     \
     }                                                                   \
     virtual ~OpVersion##cmp_name##Comparator() {}                       \
