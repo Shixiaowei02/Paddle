@@ -16,7 +16,7 @@
 #include <memory>
 #include <string>
 #include "paddle/fluid/framework/op_version_registry.h"
-#include "paddle/fluid/pybind/pybind_boost_headers.h"  // boost::variant
+#include "paddle/fluid/pybind/pybind_boost_headers.h"
 
 namespace py = pybind11;
 
@@ -94,20 +94,28 @@ void BindOpUpdateType(py::module *m) {
 }
 
 void BindOpUpdateBase(py::module *m) {
-  py::class_<OpUpdateBase>(*m, "OpUpdateBase");
-  m->def("get_op_update_info", &framework::compatible::get_op_update_info);
-  m->def("get_op_update_type", &framework::compatible::get_op_update_type);
+  py::class_<OpUpdateBase>(*m, "OpUpdateBase")
+      .def("info", [](const OpUpdateBase &obj) { return obj.info(); },
+           py::return_value_policy::reference)
+      .def("type", &OpUpdateBase::type);
 }
 
 void BindOpVersionDesc(py::module *m) {
   py::class_<OpVersionDesc>(*m, "OpVersionDesc")
-      .def(py::init<const OpVersionDesc &>())
-      .def("infos", &OpVersionDesc::infos, py::return_value_policy::reference);
+      // Pybind11 does not yet support the transfer of `const
+      // std::vector<std::unique_ptr<T>>&` type objects.
+      .def("infos", [](const OpVersionDesc &obj) {
+        auto pylist = py::list();
+        for (const auto &ptr : obj.infos()) {
+          auto pyobj = py::cast(*ptr, py::return_value_policy::reference);
+          pylist.append(pyobj);
+        }
+        return pylist;
+      });
 }
 
 void BindOpCheckpoint(py::module *m) {
   py::class_<OpCheckpoint>(*m, "OpCheckpoint")
-      .def(py::init<const OpCheckpoint &>())
       .def("note", &OpCheckpoint::note, py::return_value_policy::reference)
       .def("version_desc", &OpCheckpoint::version_desc,
            py::return_value_policy::reference);
@@ -115,11 +123,11 @@ void BindOpCheckpoint(py::module *m) {
 
 void BindOpVersion(py::module *m) {
   py::class_<OpVersion>(*m, "OpVersion")
-      .def(py::init<const OpVersion &>())
       .def("version_id", &OpVersion::version_id,
            py::return_value_policy::reference)
       .def("checkpoints", &OpVersion::checkpoints,
            py::return_value_policy::reference);
+  // At least pybind v2.3.0 is required because of bug #1603 of pybind11.
   m->def("get_op_version_map", &framework::compatible::get_op_version_map,
          py::return_value_policy::reference);
 }
