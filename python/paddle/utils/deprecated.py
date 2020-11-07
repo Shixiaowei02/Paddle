@@ -81,6 +81,7 @@ def deprecated(update_to="", since="", reason=""):
                2. since version is empty, in this case, API is deprecated in all versions.
                3. current version is newer than since version.
             """
+            nonlocal msg
             msg = "\033[93mWarning %s \033[0m" % (msg)
             v_current = [int(i) for i in paddle.__version__.split(".")]
             v_current += [0] * (4 - len(v_current))
