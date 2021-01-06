@@ -20,6 +20,7 @@ SET(GFLAGS_INSTALL_DIR ${THIRD_PARTY_PATH}/install/gflags)
 SET(GFLAGS_INCLUDE_DIR "${GFLAGS_INSTALL_DIR}/include" CACHE PATH "gflags include directory." FORCE)
 set(GFLAGS_REPOSITORY ${GIT_URL}/gflags/gflags.git)
 set(GFLAGS_TAG        77592648e3f3be87d6c7123eb81cbad75f9aef5a)
+set(GFLAGS_NAMESPACE "paddle_gflags")
 IF(WIN32)
   set(GFLAGS_LIBRARIES "${GFLAGS_INSTALL_DIR}/lib/gflags_static.lib" CACHE FILEPATH "GFLAGS_LIBRARIES" FORCE)
 ELSE(WIN32)
@@ -54,6 +55,7 @@ ExternalProject_Add(
                     -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}
                     -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}
                     -DBUILD_STATIC_LIBS=ON
+                    -DGFLAGS_NAMESPACE=${GFLAGS_NAMESPACE}
                     -DCMAKE_INSTALL_PREFIX=${GFLAGS_INSTALL_DIR}
                     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
                     -DBUILD_TESTING=OFF
