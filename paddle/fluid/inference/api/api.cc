@@ -136,7 +136,7 @@ std::string UpdateDllFlag(const char *name, const char *value) {
   LOG(WARNING)
       << "The function \"UpdateDllFlag\" is only used to update the flag "
          "on the Windows shared library";
-  ret = paddle_gflags::SetCommandLineOption(name, value);
+  ret = pd_gflags::SetCommandLineOption(name, value);
 
   PADDLE_ENFORCE_EQ(
       ret.empty(), false,

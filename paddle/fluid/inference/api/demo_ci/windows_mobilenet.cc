@@ -84,7 +84,7 @@ void RunAnalysis() {
 }  // namespace paddle
 
 int main(int argc, char** argv) {
-  ::paddle_gflags::ParseCommandLineFlags(&argc, &argv, true);
+  ::pd_gflags::ParseCommandLineFlags(&argc, &argv, true);
   paddle::demo::RunAnalysis();
   std::cout << "=========================Runs successfully===================="
             << std::endl;
