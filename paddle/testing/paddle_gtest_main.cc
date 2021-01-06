@@ -35,9 +35,9 @@ int main(int argc, char** argv) {
   external_argv.push_back(argv[0]);
   internal_argv.push_back(argv[0]);
 
-  std::vector<pd_gflags::CommandLineFlagInfo> all_flags;
+  std::vector<GFLAGS_NAMESPACE::CommandLineFlagInfo> all_flags;
   std::vector<std::string> external_flags_name;
-  pd_gflags::GetAllFlags(&all_flags);
+  GFLAGS_NAMESPACE::GetAllFlags(&all_flags);
   for (size_t i = 0; i < all_flags.size(); ++i) {
     external_flags_name.push_back(all_flags[i].name);
   }
@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
   std::vector<std::string> undefok;
 #if defined(PADDLE_WITH_DISTRIBUTE) && !defined(PADDLE_WITH_GRPC)
   std::string str_max_body_size;
-  if (pd_gflags::GetCommandLineOption("max_body_size", &str_max_body_size)) {
+  if (GFLAGS_NAMESPACE::GetCommandLineOption("max_body_size", &str_max_body_size)) {
     setenv("FLAGS_max_body_size", "2147483647", 1);
     envs.push_back("max_body_size");
   }
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
 
   int new_argc = static_cast<int>(external_argv.size());
   char** external_argv_address = external_argv.data();
-  ::pd_gflags::ParseCommandLineFlags(&new_argc, &external_argv_address, false);
+  ::GFLAGS_NAMESPACE::ParseCommandLineFlags(&new_argc, &external_argv_address, false);
 
   int internal_argc = internal_argv.size();
   char** arr = internal_argv.data();
