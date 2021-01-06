@@ -14,7 +14,7 @@
 
 #include "paddle/fluid/memory/allocation/allocator_facade.h"
 
-#include <gflags/gflags.h>
+#include "gflags/gflags.h"
 
 #include <map>
 #include <string>

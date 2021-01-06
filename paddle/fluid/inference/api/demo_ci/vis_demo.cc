@@ -16,7 +16,7 @@ limitations under the License. */
  * This file contains demo for mobilenet, se-resnext50 and ocr.
  */
 
-#include <gflags/gflags.h>
+#include "gflags/gflags.h"
 #include <glog/logging.h>
 #include "utils.h"  // NOLINT
 

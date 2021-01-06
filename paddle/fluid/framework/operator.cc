@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "paddle/fluid/framework/operator.h"
 
-#include <gflags/gflags.h>
+#include "gflags/gflags.h"
 #include <glog/logging.h>
 
 #include <algorithm>

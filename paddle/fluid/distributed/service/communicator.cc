@@ -16,7 +16,7 @@ limitations under the License. */
 #include <google/protobuf/text_format.h>
 #include "paddle/fluid/distributed/table/table.h"
 
-#include <gflags/gflags.h>
+#include "gflags/gflags.h"
 #include <paddle/fluid/framework/program_desc.h>
 
 #include <algorithm>
