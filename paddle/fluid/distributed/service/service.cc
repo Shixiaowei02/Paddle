@@ -63,7 +63,7 @@ void PSCore::init_gflag(const std::string& gflags) {
   }
   int params_cnt = flags.size();
   char** params_ptr = &(flags_ptr[0]);
-  ::google::ParseCommandLineFlags(&params_cnt, &params_ptr, true);
+  ::::paddle_gflags::ParseCommandLineFlags(&params_cnt, &params_ptr, true);
 }
 
 int PSCore::init_server(const std::string& dist_desc,

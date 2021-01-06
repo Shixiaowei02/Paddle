@@ -73,7 +73,7 @@ void Main() {
 }  // namespace paddle
 
 int main(int argc, char** argv) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ::paddle_gflags::ParseCommandLineFlags(&argc, &argv, true);
   paddle::demo::Main();
   return 0;
 }
