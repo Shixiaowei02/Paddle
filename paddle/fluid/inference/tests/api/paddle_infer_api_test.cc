@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <cuda_runtime.h>
-#include <gflags/gflags.h>
+#include "gflags/gflags.h"
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <cstring>
