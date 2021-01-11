@@ -16,7 +16,7 @@ limitations under the License. */
  * This file contains demo of mobilenet for tensorrt.
  */
 
-#include <gflags/gflags.h>
+#include "gflags/gflags.h"
 #include <glog/logging.h>  // use glog instead of CHECK to avoid importing other paddle header files.
 #include "utils.h"  // NOLINT
 

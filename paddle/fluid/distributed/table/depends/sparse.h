@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <gflags/gflags.h>
+#include "gflags/gflags.h"
 #include <math.h>  // for sqrt in CPU and CUDA
 #include <functional>
 #include <memory>
