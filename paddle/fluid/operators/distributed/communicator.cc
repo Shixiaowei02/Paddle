@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "paddle/fluid/operators/distributed/communicator.h"
 
-#include <gflags/gflags.h>
+#include "gflags/gflags.h"
 #include <paddle/fluid/framework/program_desc.h>
 
 #include <algorithm>
