@@ -109,7 +109,7 @@ function(select_nvcc_arch_flags out_variable)
   elseif(${CUDA_ARCH_NAME} STREQUAL "Turing")
     set(cuda_arch_bin "75")
   elseif(${CUDA_ARCH_NAME} STREQUAL "All")
-    set(cuda_arch_bin ${paddle_known_gpu_archs})
+    set(cuda_arch_bin "60 61 75")
   elseif(${CUDA_ARCH_NAME} STREQUAL "Auto")
     message(STATUS "WARNING: This is just a warning for publishing release.
       You are building GPU version without supporting different architectures.
