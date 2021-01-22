@@ -34,7 +34,7 @@ if (NOT LITE_SOURCE_DIR OR NOT LITE_BINARY_DIR)
   set(LITE_INSTALL_DIR ${THIRD_PARTY_PATH}/install/lite)
 
   if(NOT LITE_GIT_TAG)
-    set(LITE_GIT_TAG d3a3a6931b6d22d504d21ba32b3ae972770e9204)
+    set(LITE_GIT_TAG d3a3a6931b6d22d504d21ba32b3ae972)
   endif()
 
   if(NOT CUDA_ARCH_NAME)
@@ -63,7 +63,7 @@ if (NOT LITE_SOURCE_DIR OR NOT LITE_BINARY_DIR)
       ${LITE_PROJECT}
       ${EXTERNAL_PROJECT_LOG_ARGS}
       GIT_REPOSITORY      "${GIT_URL}/PaddlePaddle/Paddle-Lite.git"
-      GIT_TAG             ${LITE_GIT_TAG}
+      GIT_TAG            i 
       PREFIX              ${LITE_SOURCES_DIR}
       PATCH_COMMAND       mkdir -p ${LITE_SOURCES_DIR}/src/extern_lite-build/lite/gen_code && touch ${LITE_SOURCES_DIR}/src/extern_lite-build/lite/gen_code/__generated_code__.cc && sed -i "/aarch64-linux-gnu-gcc/d" ${LITE_SOURCES_DIR}/src/extern_lite/cmake/cross_compiling/armlinux.cmake && sed -i "/aarch64-linux-gnu-g++/d" ${LITE_SOURCES_DIR}/src/extern_lite/cmake/cross_compiling/armlinux.cmake
       UPDATE_COMMAND      ""
@@ -105,9 +105,8 @@ if (NOT LITE_SOURCE_DIR OR NOT LITE_BINARY_DIR)
         ${LITE_PROJECT}
         ${EXTERNAL_PROJECT_LOG_ARGS}
         GIT_REPOSITORY      "${GIT_URL}/PaddlePaddle/Paddle-Lite.git"
-        GIT_TAG             ${LITE_GIT_TAG}
+        GIT_TAG             4ef4cfbcdbf85677f37e661909779f1bf11d073e
         PREFIX              ${LITE_SOURCES_DIR}
-        UPDATE_COMMAND      ""
         BUILD_COMMAND       ${LITE_BUILD_COMMAND}
         INSTALL_COMMAND     ""
         CMAKE_ARGS          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
