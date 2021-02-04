@@ -51,8 +51,7 @@ platform::Place GetNativePlace(const TargetType& type, int id = 0) {
     case TargetType::kCUDA:
       return platform::CUDAPlace(id);
     case TargetType::kXPU:
-      LOG(ERROR) << "No corresponding device for XPU yet.";
-      return platform::Place();
+      return platform::XPUPlace(id);
     default:
       PADDLE_THROW(
           platform::errors::Unavailable("Unsupported target type. Now only "
@@ -64,8 +63,16 @@ platform::Place GetNativePlace(const TargetType& type, int id = 0) {
 TargetType GetLiteTargetType(const platform::Place& place) {
   if (platform::is_cpu_place(place)) {
     return TargetType::kHost;
+  } else if (platform::is_gpu_place(place)) {
+    return TargetType::kCUDA;
+  } else if (platform::is_xpu_place(place)) {
+    return TargetType::kXPU;
+  } else {
+    PADDLE_THROW(
+        platform::errors::Unavailable("Unsupported target type. Now only "
+                                      "supports Host, x86, CUDA target."));
   }
-  return TargetType::kCUDA;
+  return TargetType();
 }
 
 PrecisionType GetLitePrecisionType(framework::proto::VarType::Type type) {
@@ -122,7 +129,8 @@ void MemoryCopyAsync(const platform::Place& dst_place, void* dst_data,
   const platform::CPUPlace cpu_place;
   if (platform::is_cpu_place(dst_place) && platform::is_cpu_place(src_place)) {
     memory::Copy(cpu_place, dst_data, cpu_place, src_data, size);
-  } else {
+  } else if (platform::is_gpu_place(dst_place) ||
+             platform::is_gpu_place(src_place)) {
 #ifdef PADDLE_WITH_CUDA
     if (platform::is_cpu_place(dst_place) &&
         platform::is_gpu_place(src_place)) {
@@ -143,12 +151,34 @@ void MemoryCopyAsync(const platform::Place& dst_place, void* dst_data,
     PADDLE_THROW(platform::errors::PreconditionNotMet(
         "You must define PADDLE_WITH_CUDA for using CUDAPlace."));
 #endif
+  } else if (platform::is_xpu_place(dst_place) ||
+             platform::is_xpu_place(src_place)) {
+#ifdef PADDLE_WITH_XPU
+    if (platform::is_cpu_place(dst_place) &&
+        platform::is_xpu_place(src_place)) {
+      PADDLE_THROW(platform::errors::Unimplemented(
+          "Lite::MemoryCopy XPU->CPU is not yet implemented."));
+    } else if (platform::is_xpu_place(dst_place) &&
+               platform::is_cpu_place(src_place)) {
+      PADDLE_THROW(platform::errors::Unimplemented(
+          "Lite::MemoryCopy CPU->XPU is not yet implemented."));
+    } else if (platform::is_xpu_place(dst_place) &&
+               platform::is_xpu_place(src_place)) {
+      auto xpu_place = BOOST_GET_CONST(platform::XPUPlace, src_place);
+      memory::Copy(xpu_place, dst_data, xpu_place, src_data, size);
+    }
+#else
+    PADDLE_THROW(platform::errors::PreconditionNotMet(
+        "You must define PADDLE_WITH_XPU for using XPUPlace."));
+#endif
   }
 }
 
 void* GetLiteTensorDataPtr(paddle::lite_api::Tensor* src,
                            PrecisionType precision_type,
                            TargetType target_type) {
+  LOG(INFO) << "precision_type: " << static_cast<int>(precision_type) << ", "
+            << "target_type: " << static_cast<int>(target_type);
   void* res{nullptr};
   switch (precision_type) {
     case PrecisionType::kFloat:
@@ -207,6 +237,8 @@ void TensorCopyAsync(paddle::lite_api::Tensor* dst,
   InitDstTensor(dst, src);
   const platform::Place& src_place = src.place();
   const platform::Place& dst_place = GetNativePlace(dst->target());
+  VLOG(3) << "[CopyAsync fluid -> lite] dst.target() = "
+          << static_cast<int>(dst->target());
   const size_t bytes =
       static_cast<size_t>(src.numel()) * framework::SizeOfType(src.type());
   dst->Resize(framework::vectorize(src.dims()));
@@ -227,6 +259,8 @@ void TensorCopyAsync(framework::LoDTensor* dst,
   dst->Resize(paddle::framework::make_ddim(src.shape()));
   InitDstTensor(dst, src);
   const platform::Place& src_place = GetNativePlace(src.target());
+  VLOG(3) << "[CopyAsync lite -> fluid] src.target() = "
+          << static_cast<int>(src.target());
   const platform::Place& dst_place = dst->place();
   int64_t src_numel = GetLiteTensorNumel(src);
   const size_t bytes = src_numel * framework::SizeOfType(dst->type());
@@ -234,7 +268,7 @@ void TensorCopyAsync(framework::LoDTensor* dst,
   // When Lite is ready, the source type needs to be modified here.
   void* dst_data = dst->mutable_data(dst_place, dst->type());
   VLOG(3) << "[CopyAsync lite -> fluid] Bytes = " << bytes << ", src = " << &src
-          << ", dst = " << dst << ", src_type = " << dst->type();
+          << ", dst = " << dst << ", dst_type = " << dst->type();
   MemoryCopyAsync(dst_place, dst_data, src_place, src_data, bytes, ctx);
   VLOG(3) << "[Lite memory size] Bytes = " << bytes;
 }
