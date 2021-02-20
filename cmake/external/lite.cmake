@@ -25,6 +25,8 @@ if(XPU_SDK_ROOT)
   add_definitions(-DLITE_SUBGRAPH_WITH_XPU)
   LINK_DIRECTORIES("${XPU_SDK_ROOT}/XTDK/shlib/")
   LINK_DIRECTORIES("${XPU_SDK_ROOT}/XTDK/runtime/shlib/")
+elseif(WITH_XPU)
+  message(FATAL_ERROR "When `WITH_XPU` and `WITH_LITE` are enabled at the same time, `XPU_SDK_ROOT` must be specified as the XPU toolchain path.")
 endif()
 
 if (NOT LITE_SOURCE_DIR OR NOT LITE_BINARY_DIR)
