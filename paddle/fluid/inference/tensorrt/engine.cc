@@ -149,10 +149,28 @@ void TensorRTEngine::FreezeNetwork() {
             return false;
           }
           if (!temp_out->dynamicRangeIsSet()) {
-            VLOG(1) << "Layer(Name: " << layer->getName()
-                    << ") is set to float32 because its output("
-                    << temp_out->getName() << ") doesn't have dynamic range.";
-            return false;
+                          // Add output scale for shuffle layers inserted by TRT itself.
+            if (layer->getType() == nvinfer1::LayerType::kSHUFFLE) {
+              auto *temp_in = layer->getInput(j);
+              if (temp_in->dynamicRangeIsSet()) {
+                float shuffle_input_scale = temp_in->getDynamicRangeMax();
+                PADDLE_ENFORCE_GE(
+                    shuffle_input_scale, 0,
+                    platform::errors::InvalidArgument(
+                        "The input scale of TRT shuffle layer should be "
+                        "greater or equal than 0, but got %f",
+                        shuffle_input_scale));
+                temp_out->setDynamicRange(-shuffle_input_scale,
+                                          shuffle_input_scale);
+                return true;
+              }
+              return false;
+            } else {
+              VLOG(1) << "Layer(Name: " << layer->getName()
+                      << ") is set to float32 because its output("
+                      << temp_out->getName() << ") doesn't have dynamic range.";
+              return false;
+            }
           }
         }
         return true;
@@ -173,6 +191,29 @@ void TensorRTEngine::FreezeNetwork() {
                       "TRT to run.";
 #endif
 #endif
+    }
+  }
+
+  if (use_dla_) {
+    if (!enable_int8 && !enable_fp16) {
+      LOG(WARNING) << "TensorRT DLA must be used with int8 or fp16, but you "
+                      "set float32, so DLA is not used.";
+    } else if (infer_builder_->getNbDLACores() == 0) {
+      LOG(WARNING)
+          << "TensorRT DLA is set by config, but your device does not have "
+             "DLA, so DLA is not used.";
+    } else {
+      if (dla_core_ < 0 || dla_core_ >= infer_builder_->getNbDLACores()) {
+        dla_core_ = 0;
+        LOG(WARNING) << "Invalid DLACore, must be 0 < DLACore < "
+                     << infer_builder_->getNbDLACores() << ", but got "
+                     << dla_core_ << ", so use use 0 as default.";
+      }
+      infer_builder_->setDefaultDeviceType(nvinfer1::DeviceType::kDLA);
+      infer_builder_->setDLACore(dla_core_);
+      infer_builder_->allowGPUFallback(true);
+      LOG(INFO) << "TensorRT DLA enabled in FreezeNetwork(), DLACore "
+                << dla_core_;
     }
   }
 

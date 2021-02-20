@@ -143,6 +143,8 @@ struct Argument {
   DECL_ARGUMENT_FIELD(model_from_memory, ModelFromMemory, bool);
   DECL_ARGUMENT_FIELD(optim_cache_dir, OptimCacheDir, std::string);
   DECL_ARGUMENT_FIELD(enable_analysis_optim, EnableAnalysisOptim, bool);
+  DECL_ARGUMENT_FIELD(tensorrt_use_dla, TensorRtUseDLA, bool);
+  DECL_ARGUMENT_FIELD(tensorrt_dla_core, TensorRtDLACore, int);
 
   // The overall graph to work on.
   DECL_ARGUMENT_UNIQUE_FIELD(main_graph, MainGraph, framework::ir::Graph);

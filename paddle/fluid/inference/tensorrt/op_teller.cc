@@ -67,7 +67,7 @@ struct SimpleOpTypeSetTeller : public Teller {
                                                   "batch_norm",
                                                   "elementwise_add",
                                                   "leaky_relu",
-                                                  "fc",
+                                                  //"fc",
                                                   "concat",
                                                   "scale",
                                                   "elementwise_mul",
@@ -94,7 +94,7 @@ struct SimpleOpTypeSetTeller : public Teller {
       "prelu",
       "conv2d_transpose",
       "leaky_relu",
-      "fc",
+      //"fc",
       "shuffle_channel",
       "swish",
       "split",
@@ -103,6 +103,7 @@ struct SimpleOpTypeSetTeller : public Teller {
       "layer_norm",
       "scale",
       "stack",
+      "transpose2",
   };
 };
 
@@ -128,6 +129,9 @@ bool OpTeller::Tell(const std::string& op_type, const framework::OpDesc& desc,
       if (paddings.size() > 2 ||
           (padding_algorithm == "SAME" && op_type != "pool2d"))
         return false;
+    }
+    if (op_type == "transpose2") {
+      if (!desc.HasAttr("axis")) return false;
     }
     if (op_type == "matmul") {
       auto* block = desc.Block();

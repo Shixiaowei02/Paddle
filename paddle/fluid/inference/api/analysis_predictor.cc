@@ -40,6 +40,7 @@
 #include "paddle/fluid/platform/gpu_info.h"
 #include "paddle/fluid/platform/place.h"
 #include "paddle/fluid/platform/profiler.h"
+#include "paddle/fluid/platform/init.h"
 
 #ifdef PADDLE_WITH_MKLML
 #include "paddle/fluid/platform/dynload/mklml.h"
@@ -162,6 +163,47 @@ bool AnalysisPredictor::Init(
   PrepareFeedFetch();
 
   return true;
+}
+
+void ParseCommandLineFlags(){
+    std::vector<char *> internal_argv;
+    std::string dummy = "dummy";
+    internal_argv.push_back(strdup(dummy.c_str()));
+    std::vector<std::string> envs;
+    std::vector<std::string> undefok;
+#ifdef PADDLE_WITH_CUDA
+    envs.push_back("fraction_of_gpu_memory_to_use");
+    envs.push_back("initial_gpu_memory_in_mb");
+    envs.push_back("reallocate_gpu_memory_in_mb");
+#endif
+    envs.push_back("allocator_strategy");
+    envs.push_back("initial_cpu_memory_in_mb");
+    undefok.push_back("initial_cpu_memory_in_mb");
+    char* env_str = nullptr;
+    if (envs.size() > 0) {
+        std::string env_string = "--tryfromenv=";
+        for (auto t : envs) {
+            env_string += t + ",";
+        }
+        env_string = env_string.substr(0, env_string.length() - 1);
+        env_str = strdup(env_string.c_str());
+        internal_argv.push_back(env_str);
+        LOG(INFO) << "get env_string" << env_string;
+    }
+
+    char* undefok_str = nullptr;
+    if (undefok.size() > 0) {
+        std::string undefok_string = "--undefok=";
+        for (auto t : undefok) {
+            undefok_string += t + ",";
+        }
+        undefok_string = undefok_string.substr(0, undefok_string.length() - 1);
+        undefok_str = strdup(undefok_string.c_str());
+        internal_argv.push_back(undefok_str);
+    }
+    int internal_argc = internal_argv.size();
+    char** arr = internal_argv.data();
+    paddle::platform::ParseCommandLineFlags(internal_argc, arr, true);
 }
 
 bool AnalysisPredictor::PrepareScope(
@@ -476,6 +518,8 @@ void AnalysisPredictor::PrepareArgument() {
     argument_.SetTensorRtWorkspaceSize(config_.tensorrt_workspace_size_);
     argument_.SetTensorRtMaxBatchSize(config_.tensorrt_max_batchsize_);
     argument_.SetTensorRtMinSubgraphSize(config_.tensorrt_min_subgraph_size_);
+    argument_.SetTensorRtUseDLA(config_.trt_use_dla_);
+    argument_.SetTensorRtDLACore(config_.trt_dla_core_);
     argument_.SetTensorRtDisabledOPs(config_.trt_disabled_ops_);
     argument_.SetTensorRtPrecisionMode(config_.tensorrt_precision_mode_);
     argument_.SetTensorRtUseStaticEngine(config_.trt_use_static_engine_);
@@ -558,6 +602,7 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
     FLAGS_minloglevel = 2;  // GLOG_ERROR
   }
   VLOG(3) << "create AnalysisConfig";
+  ParseCommandLineFlags();
   PADDLE_ENFORCE_EQ(
       config.is_valid(), true,
       platform::errors::InvalidArgument(
@@ -580,7 +625,8 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
               config.gpu_device_id()));
       gflags.push_back("dummy");
 
-      float fraction_of_gpu_memory = config.fraction_of_gpu_memory_for_pool();
+      //float fraction_of_gpu_memory = config.fraction_of_gpu_memory_for_pool();
+      float fraction_of_gpu_memory = 0;
       if (fraction_of_gpu_memory > 0.95f) {
         LOG(ERROR)
             << "Allocate too much memory for the GPU memory pool, assigned "
@@ -1087,6 +1133,7 @@ USE_TRT_CONVERTER(pad);
 USE_TRT_CONVERTER(hard_sigmoid);
 USE_TRT_CONVERTER(hard_swish);
 USE_TRT_CONVERTER(split);
+USE_TRT_CONVERTER(transpose);
 USE_TRT_CONVERTER(prelu);
 USE_TRT_CONVERTER(conv2d_transpose);
 USE_TRT_CONVERTER(leaky_relu);
@@ -1101,7 +1148,7 @@ USE_TRT_CONVERTER(skip_layernorm);
 USE_TRT_CONVERTER(slice);
 USE_TRT_CONVERTER(scale);
 USE_TRT_CONVERTER(stack);
-USE_TRT_CONVERTER(clip);
+//USE_TRT_CONVERTER(clip);
 #endif
 
 namespace paddle_infer {

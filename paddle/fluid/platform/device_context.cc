@@ -328,14 +328,14 @@ CUDAContext::CUDAContext(const CUDAPlace& place,
   InitEigenContext();
   InitCuBlasContext();
   InitCuDNNContext();
-  InitCuSolverContext();
+  //InitCuSolverContext();
 }
 
 CUDAContext::~CUDAContext() {
   CUDADeviceGuard guard(place_.device);
   DestoryCuDNNContext();
   DestoryCuBlasContext();
-  DestoryCuSolverContext();
+  //DestoryCuSolverContext();
 }
 
 CUDADeviceContext::CUDADeviceContext(CUDAPlace place) : place_(place) {

@@ -114,14 +114,27 @@ void IRPassManager::CreatePasses(Argument *argument,
               "When you are in TRT INT8 mode, and load model from "
               "memory, you should set optim_cache_dir using "
               "config.SetOptimCacheDir()"));
-      PADDLE_ENFORCE_EQ(
-          !(model_from_memory && use_static_engine), true,
-          platform::errors::PreconditionNotMet(
-              "When you are using Paddle-TRT, and also using load model "
-              "from memory, you should set the use_static to false."));
+      if (model_from_memory && use_static_engine) {
+        PADDLE_ENFORCE_EQ(
+            optim_cache_dir.empty(), false,
+            platform::errors::PreconditionNotMet(
+                "When you are using Paddle-TRT, and using load model "
+                "from memory, and also set the use_static to true. "
+                "you must set optim_cache_dir using "
+                "config.SetOptimCacheDir()."));
+      }
 
       if (!optim_cache_dir.empty()) {
-        pass->Set("model_opt_cache_dir", new std::string(optim_cache_dir));
+        if (!PathExists(optim_cache_dir)) {
+          PADDLE_ENFORCE_NE(
+              MKDIR(optim_cache_dir.c_str()), -1,
+              platform::errors::PreconditionNotMet(
+                "Can not create optimize cache directory: %s, Make sure you "
+                "have permission to write",
+                optim_cache_dir));
+        }
+        pass->Set("model_opt_cache_dir", 
+            new std::string(optim_cache_dir));
       } else if (use_static_engine || enable_int8) {
         std::string model_opt_cache_dir =
             argument->Has("model_dir")
@@ -141,6 +154,8 @@ void IRPassManager::CreatePasses(Argument *argument,
       pass->Set("optim_input_shape",
                 new std::map<std::string, std::vector<int>>(
                     argument->optim_input_shape()));
+      pass->Set("trt_use_dla", new bool(argument->tensorrt_use_dla()));
+      pass->Set("trt_dla_core", new int(argument->tensorrt_dla_core()));
       pass->Set("trt_disabled_ops", new std::vector<std::string>(
                                         argument->tensorrt_disabled_ops()));
       // Setting the disable_trt_plugin_fp16 to true means that TRT plugin will

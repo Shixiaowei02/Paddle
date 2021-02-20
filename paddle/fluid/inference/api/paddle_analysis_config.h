@@ -346,6 +346,20 @@ struct PD_INFER_DECL AnalysisConfig {
       const std::vector<std::string>& passes_filter = {},
       const std::vector<std::string>& ops_filter = {});
 
+  /// \brief Enable TensorRT DLA
+  /// \param dla_core ID of DLACore, which should be 0, 1,
+  ///        ..., IBuilder.getNbDLACores() - 1
+  ///
+  void EnableTensorRtDLA(int dla_core = 0);
+
+  ///
+  /// \brief A boolean state telling whether to use the TensorRT DLA.
+  ///
+  /// \return bool Whether to use the TensorRT DLA.
+  ///
+  bool tensorrt_dla_enabled() { return trt_use_dla_; }
+
+
   ///
   /// \brief A boolean state indicating whether the Lite sub-graph engine is
   /// used.
@@ -591,6 +605,9 @@ struct PD_INFER_DECL AnalysisConfig {
   bool trt_use_static_engine_{false};
   bool trt_use_calib_mode_{true};
   bool trt_use_oss_{false};
+  bool trt_use_dla_{false};
+  int trt_dla_core_{0};
+
   std::map<std::string, std::vector<int>> min_input_shape_{};
   std::map<std::string, std::vector<int>> max_input_shape_{};
   std::map<std::string, std::vector<int>> optim_input_shape_{};
