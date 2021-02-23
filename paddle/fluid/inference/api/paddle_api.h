@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include "crypto/cipher.h"
+#include "experimental/custom_operator.h"
 #include "paddle_infer_declare.h"  // NOLINT
                                    /*! \namespace paddle
                                     */
