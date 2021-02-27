@@ -1,4 +1,4 @@
-# Copyright (c) 2016 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-cc_library(reset_tensor_array SRCS reset_tensor_array.cc DEPS lod_tensor scope)
-cc_library(zero_copy_tensor SRCS zero_copy_tensor.cc DEPS scope lod_tensor enforce)
-cc_library(zero_copy_tensor_dummy SRCS zero_copy_tensor_dummy.cc)
+
+set(FLUID_FRAMEWORK_MODULES proto_desc memory lod_tensor executor data_feed_proto layer dynamic_loader custom_operator)
+cc_library(infer_custom_op SRCS custom_operator.cc DEPS ${FLUID_FRAMEWORK_MODULES})

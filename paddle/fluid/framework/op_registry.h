@@ -86,6 +86,7 @@ class Registrar {
 template <typename... ARGS>
 struct OperatorRegistrar : public Registrar {
   explicit OperatorRegistrar(const char* op_type) {
+    std::cout << "op_type: " << op_type << std::endl;
     PADDLE_ENFORCE_EQ(
         OpInfoMap::Instance().Has(op_type), false,
         platform::errors::AlreadyExists(

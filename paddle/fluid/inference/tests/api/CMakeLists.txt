@@ -675,3 +675,5 @@ endif()
 if(ON_INFER OR WITH_GPU)
     set_tests_properties(test_analyzer_transformer_profile PROPERTIES TIMEOUT 120)
 endif()
+
+cc_binary(custom_op_test SRCS custom_op_test.cc DEPS paddle_inference_shared)
