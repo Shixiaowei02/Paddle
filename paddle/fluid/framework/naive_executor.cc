@@ -44,12 +44,12 @@ void NaiveExecutor::Run(const ExecOpCallBack& callback) {
     VLOG(4) << std::this_thread::get_id() << " run "
             << op->DebugStringEx(scope_) << " on scope " << scope_;
     op->SetIsCalledByExecutor(false);
-    if (callback.before) {
-      callback.before(scope_, op.get(), &place_);
+    for (const auto& before: callback.before) {
+      before(scope_, op.get(), &place_);
     }
     op->Run(*scope_, place_);
-    if (callback.after) {
-      callback.after(scope_, op.get(), &place_);
+    for (const auto& after: callback.after) {
+      after(scope_, op.get(), &place_);
     }
   }
 }

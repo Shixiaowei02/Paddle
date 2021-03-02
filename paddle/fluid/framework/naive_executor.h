@@ -27,13 +27,13 @@
 namespace paddle {
 namespace framework {
 
-typedef std::function<bool(const Scope*, const OperatorBase*,
-                           const platform::Place*)>
-    ExecOpCallBackFunc;
+typedef std::vector<std::function<bool(const Scope*, const OperatorBase*,
+                           const platform::Place*)>>
+    ExecOpCallBackFuncs;
 
 struct ExecOpCallBack {
-  ExecOpCallBackFunc before;
-  ExecOpCallBackFunc after;
+  ExecOpCallBackFuncs before;
+  ExecOpCallBackFuncs after;
 };
 
 /*

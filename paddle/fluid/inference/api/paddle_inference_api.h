@@ -27,6 +27,7 @@ limitations under the License. */
 #include <string>
 #include <utility>
 #include <vector>
+#include <functional>
 
 #include "paddle_analysis_config.h"  // NOLINT
 #include "paddle_api.h"              // NOLINT
@@ -133,6 +134,30 @@ class PD_INFER_DECL Tensor {
   std::unique_ptr<paddle::ZeroCopyTensor> tensor_;
 };
 
+class VariableInfo {
+public:
+  const std::string& name() const;
+  const Tensor* tensor() const;
+protected:
+  struct Impl;
+  VariableInfo();
+  ~VariableInfo();
+  std::unique_ptr<Impl> impl_;
+};
+
+class OperatorInfo {
+public:
+  const std::string& desc() const;
+  const std::string& type() const;
+protected:
+  struct Impl;
+  OperatorInfo();
+  ~OperatorInfo();
+  std::unique_ptr<Impl> impl_;
+};
+
+using OperatorCallBack = std::function<bool(const std::vector<VariableInfo*>, const OperatorInfo*)>;
+
 ///
 /// \class Predictor
 ///
@@ -198,6 +223,8 @@ class PD_INFER_DECL Predictor {
   /// \return Whether the function executed successfully
   ///
   bool Run();
+
+  bool RunWithCallBack(const std::vector<OperatorCallBack>& before, const std::vector<OperatorCallBack>& after);
 
   ///
   /// \brief Get the output names
@@ -278,11 +305,7 @@ T* Tensor::data(PlaceType* place, int* size) const {
   return tensor_->data<T>(place, size);
 }
 
-}  // namespace paddle_infer
-
-namespace paddle_infer {
 namespace services {
-
 ///
 /// \class PredictorPool
 ///
