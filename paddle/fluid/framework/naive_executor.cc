@@ -35,7 +35,7 @@ void NaiveExecutor::Prepare(Scope *scope, const ProgramDesc &program_desc,
   CreateOps(program_desc, block_id, with_feed_fetch_ops);
 }
 
-void NaiveExecutor::Run() {
+void NaiveExecutor::Run(const ExecOpCallBack& callback) {
 #ifdef PADDLE_WITH_MKLDNN
   platform::AttachPointerHashToMKLDNNKey(this, place_);
 #endif
@@ -44,7 +44,13 @@ void NaiveExecutor::Run() {
     VLOG(4) << std::this_thread::get_id() << " run "
             << op->DebugStringEx(scope_) << " on scope " << scope_;
     op->SetIsCalledByExecutor(false);
+    if (callback.before) {
+      callback.before(scope_, op.get(), &place_);
+    }
     op->Run(*scope_, place_);
+    if (callback.after) {
+      callback.after(scope_, op.get(), &place_);
+    }
   }
 }
 
