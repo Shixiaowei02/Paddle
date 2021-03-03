@@ -103,7 +103,7 @@ DataType Tensor::type() const {
 }
 
 template <typename T>
-void Tensor::copy_from_cpu(const T *data) {
+void Tensor::CopyFromCpu(const T *data) {
   EAGER_GET_TENSOR;
   PADDLE_ENFORCE_GE(tensor->numel(), 0,
                     paddle::platform::errors::PreconditionNotMet(
@@ -146,7 +146,7 @@ void Tensor::copy_from_cpu(const T *data) {
 }
 
 template <typename T>
-void Tensor::copy_to_cpu(T *data) {
+void Tensor::CopyToCpu(T *data) {
   EAGER_GET_TENSOR;
   auto ele_num = tensor->numel();
   auto *t_data = tensor->data<T>();
@@ -185,22 +185,22 @@ void Tensor::copy_to_cpu(T *data) {
         "The analysis predictor supports CPU, GPU and XPU now."));
   }
 }
-template PD_INFER_DECL void Tensor::copy_from_cpu<float>(
+template PD_INFER_DECL void Tensor::CopyFromCpu<float>(
     const float *data);
-template PD_INFER_DECL void Tensor::copy_from_cpu<int64_t>(
+template PD_INFER_DECL void Tensor::CopyFromCpu<int64_t>(
     const int64_t *data);
-template PD_INFER_DECL void Tensor::copy_from_cpu<int32_t>(
+template PD_INFER_DECL void Tensor::CopyFromCpu<int32_t>(
     const int32_t *data);
-template PD_INFER_DECL void Tensor::copy_from_cpu<uint8_t>(
+template PD_INFER_DECL void Tensor::CopyFromCpu<uint8_t>(
     const uint8_t *data);
-template PD_INFER_DECL void Tensor::copy_from_cpu<int8_t>(
+template PD_INFER_DECL void Tensor::CopyFromCpu<int8_t>(
     const int8_t *data);
 
-template PD_INFER_DECL void Tensor::copy_to_cpu<float>(float *data);
-template PD_INFER_DECL void Tensor::copy_to_cpu<int64_t>(int64_t *data);
-template PD_INFER_DECL void Tensor::copy_to_cpu<int32_t>(int32_t *data);
-template PD_INFER_DECL void Tensor::copy_to_cpu<uint8_t>(uint8_t *data);
-template PD_INFER_DECL void Tensor::copy_to_cpu<int8_t>(int8_t *data);
+template PD_INFER_DECL void Tensor::CopyToCpu<float>(float *data);
+template PD_INFER_DECL void Tensor::CopyToCpu<int64_t>(int64_t *data);
+template PD_INFER_DECL void Tensor::CopyToCpu<int32_t>(int32_t *data);
+template PD_INFER_DECL void Tensor::CopyToCpu<uint8_t>(uint8_t *data);
+template PD_INFER_DECL void Tensor::CopyToCpu<int8_t>(int8_t *data);
 
 template PD_INFER_DECL float *Tensor::data<float>(PlaceType *place,
                                                           int *size) const;

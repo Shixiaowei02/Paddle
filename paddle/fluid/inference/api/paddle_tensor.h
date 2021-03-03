@@ -69,13 +69,13 @@ class PD_INFER_DECL Tensor {
   /// It's usually used to set the input tensor data.
   /// \param data The pointer of the data, from which the tensor will copy.
   template <typename T>
-  void copy_from_cpu(const T* data);
+  void CopyFromCpu(const T* data);
 
   /// \brief Copy the tensor data to the host memory.
   /// It's usually used to get the output tensor data.
   /// \param[out] data The tensor will copy the data to the address.
   template <typename T>
-  void copy_to_cpu(T* data);
+  void CopyToCpu(T* data);
 
   /// \brief Return the shape of the Tensor.
   std::vector<int> shape() const;
