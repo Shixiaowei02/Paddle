@@ -47,7 +47,7 @@ std::unique_ptr<PaddlePredictor> InitializePredictor(
   auto input = predictor->GetInputTensor(input_name);
   std::vector<int> shape{N, C, H, W};
   input->Reshape(std::move(shape));
-  input->copy_from_cpu(data.data());
+  input->CopyFromCpu(data.data());
 
   return predictor;
 }
@@ -75,7 +75,7 @@ void compare(bool use_mkldnn = false) {
   int numel = std::accumulate(output_shape.begin(), output_shape.end(), 1,
                               std::multiplies<int>());
   std::vector<float> xx_output(numel);
-  output->copy_to_cpu(xx_output.data());
+  output->CopyToCpu(xx_output.data());
 
   // Initialize xx model's predictor to trigger oneDNN cache clearing
   predictor_xx =
@@ -89,7 +89,7 @@ void compare(bool use_mkldnn = false) {
   // Get again output of xx model , but when all three models were executed
   std::vector<float> xx2_output(numel);
   output = predictor_xx->GetOutputTensor(predictor_xx->GetOutputNames()[0]);
-  output->copy_to_cpu(xx2_output.data());
+  output->CopyToCpu(xx2_output.data());
 
   // compare results
   auto result = std::equal(

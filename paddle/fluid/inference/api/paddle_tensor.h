@@ -46,7 +46,7 @@ class PD_INFER_DECL Tensor {
  public:
   /// \brief Reset the shape of the tensor.
   /// Generally it's only used for the input tensor.
-  /// Reshape must be called before calling mutable_data() or copy_from_cpu()
+  /// Reshape must be called before calling mutable_data() or CopyFromCpu()
   /// \param shape The shape to set.
   void Reshape(const std::vector<int>& shape);
 
