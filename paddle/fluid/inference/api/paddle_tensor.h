@@ -14,6 +14,12 @@
 
 #pragma once
 
+#include "paddle_infer_declare.h"  // NOLINT
+
+namespace paddle {
+  class AnalysisPredictor;
+}
+
 namespace paddle_infer {
 
 /// \brief Paddle data type.
@@ -110,6 +116,5 @@ class PD_INFER_DECL Tensor {
   DataType dtype_;
   int device_;
 };
-
 
 } // namespace paddle_infer
