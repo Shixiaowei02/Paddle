@@ -314,6 +314,8 @@ class PD_INFER_DECL PaddlePredictor {
   /// \return Whether the run is successful
   virtual bool ZeroCopyRun() { return false; }
 
+  virtual bool ZeroCopyRunWithCallBack() {}
+
   ///
   /// \brief Clear the intermediate tensors of the predictor
   ///
