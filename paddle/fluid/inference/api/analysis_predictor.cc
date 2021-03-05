@@ -847,6 +847,10 @@ std::unique_ptr<ZeroCopyTensor> AnalysisPredictor::GetOutputTensor(
 }
 
 bool AnalysisPredictor::ZeroCopyRun() {
+  return ZeroCopyRunWithCallBack();
+}
+
+bool AnalysisPredictor::ZeroCopyRunWithCallBack(const std::vector<OperatorCallBack>& before, const std::vector<OperatorCallBack>& after) {
   paddle::platform::SetNumThreads(config_.cpu_math_library_num_threads());
 #ifdef PADDLE_WITH_MKLDNN
   if (config_.use_mkldnn_) {
@@ -1220,6 +1224,10 @@ std::unique_ptr<Tensor> Predictor::GetOutputHandle(const std::string &name) {
 
 bool Predictor::Run() { return predictor_->ZeroCopyRun(); }
 
+bool Predictor::RunWithCallBack(const std::vector<OperatorCallBack>& before, const std::vector<OperatorCallBack>& after) {
+  return predictor_->ZeroCopyRunWithCallBack(before, after);
+}
+
 std::unique_ptr<Predictor> Predictor::Clone() {
   auto analysis_pred = predictor_->Clone();
   std::unique_ptr<Predictor> pred(new Predictor(std::move(analysis_pred)));
@@ -1254,9 +1262,6 @@ std::string UpdateDllFlag(const char *name, const char *value) {
   return paddle::UpdateDllFlag(name, value);
 }
 
-}  // namespace paddle_infer
-
-namespace paddle_infer {
 std::shared_ptr<Predictor> CreatePredictor(const Config &config) {  // NOLINT
   std::shared_ptr<Predictor> predictor(new Predictor(config));
   return predictor;
@@ -1294,4 +1299,18 @@ Predictor *PredictorPool::Retrive(size_t idx) {
   return preds_[idx - 1].get();
 }
 }  // namespace services
+
+struct OperatorInfo::Impl {
+  std::string desc;
+  std::string type;
+};
+
+const std::string& OperatorInfo::desc() const {
+  return impl_->desc;
+}
+
+const std::string& OperatorInfo::type() const {
+  return impl_->type;
+}
+
 }  // namespace paddle_infer

@@ -112,6 +112,8 @@ class PD_INFER_DECL Predictor {
   ///
   bool Run();
 
+  bool RunWithCallBack(const std::vector<OperatorCallBack>& before, const std::vector<OperatorCallBack>& after);
+
   ///
   /// \brief Get the output names
   ///

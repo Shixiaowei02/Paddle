@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include <vector>
+#include <string>
+#include <functional>
+
 #include "paddle_infer_declare.h"  // NOLINT
 
 namespace paddle_infer {
@@ -107,5 +111,18 @@ class PD_INFER_DECL Tensor {
   PlaceType place_;
   int device_;
 };
+
+class OperatorInfo {
+public:
+  const std::string& desc() const;
+  const std::string& type() const;
+protected:
+  struct Impl;
+  OperatorInfo();
+  ~OperatorInfo();
+  std::unique_ptr<Impl> impl_;
+};
+
+using OperatorCallBack = std::function<bool(const OperatorInfo&, const std::vector<Tensor*>&)>;
 
 }  // namespace paddle_infer

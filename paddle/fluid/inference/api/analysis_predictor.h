@@ -164,6 +164,8 @@ class AnalysisPredictor : public PaddlePredictor {
   ///
   bool ZeroCopyRun() override;
 
+  bool ZeroCopyRunWithCallBack(const std::vector<OperatorCallBack>& before = {}, const std::vector<OperatorCallBack>& after = {}) override;
+
   ///
   /// \brief Create feed fetch variables
   ///

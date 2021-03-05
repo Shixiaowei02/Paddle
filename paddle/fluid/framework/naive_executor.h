@@ -27,6 +27,15 @@
 namespace paddle {
 namespace framework {
 
+typedef std::vector<std::function<bool(const Scope*, const OperatorBase*,
+                           const platform::Place*)>>
+    ExecOpCallBackFuncs;
+
+struct ExecOpCallBack {
+  ExecOpCallBackFuncs before;
+  ExecOpCallBackFuncs after;
+};
+
 /*
  * Simple, intuitive and effective. Only single thread is supported, and
  * currently designed for inference.
@@ -54,7 +63,7 @@ class NaiveExecutor {
                        Scope* scope);
 
   // Run all the operators.
-  void Run();
+  void Run(const ExecOpCallBack& callback = {});
 
   // Get an tensor to operating directly, without the need for feed_ops.
   LoDTensor* FindTensor(const std::string& name);
