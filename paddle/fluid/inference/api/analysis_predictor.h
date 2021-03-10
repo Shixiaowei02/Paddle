@@ -145,7 +145,7 @@ class AnalysisPredictor : public PaddlePredictor {
   ///
   /// \brief Get the Output Tensor object
   ///
-  /// \param[in] name otuput name
+  /// \param[in] name output name
   /// \return output tensor
   ///
   std::unique_ptr<ZeroCopyTensor> GetOutputTensor(
@@ -163,6 +163,17 @@ class AnalysisPredictor : public PaddlePredictor {
   /// \return Whether the function executed successfully
   ///
   bool ZeroCopyRun() override;
+
+  ///
+  /// \brief Run the prediction engine with callback
+  ///
+  /// \param[in] callback before the operator execution
+  /// \param[in] callback after the operator execution
+  /// \return Whether the function executed successfully
+  ///
+  bool ZeroCopyRunWithCallBack(
+      const std::vector<OperatorCallBack> &before = {},
+      const std::vector<OperatorCallBack> &after = {}) override;
 
   ///
   /// \brief Create feed fetch variables
