@@ -31,8 +31,6 @@ public:
 
   std::shared_ptr<Predictor> Clone() const = 0;
 
-  void ClearIntermediateTensor() = 0;
-
   uint64_t TryShrinkMemory() = 0;
 };
 
