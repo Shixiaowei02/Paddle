@@ -22,10 +22,10 @@
 #include <vector>
 #include "paddle/fluid/framework/naive_executor.h"
 #include "paddle/fluid/inference/analysis/analyzer.h"
-#include "paddle/fluid/inference/api/analysis_predictor.h"
-#include "paddle/fluid/inference/api/api_impl.h"
+#include "paddle/fluid/inference/api/details/analysis_predictor.h"
+#include "paddle/fluid/inference/api/details/api_impl.h"
 #include "paddle/fluid/inference/api/details/reset_tensor_array.h"
-#include "paddle/fluid/inference/api/helper.h"
+#include "paddle/fluid/inference/api/details/helper.h"
 #include "paddle/fluid/inference/api/paddle_inference_api.h"
 #include "paddle/fluid/string/printf.h"
 #ifdef PADDLE_WITH_TESTING

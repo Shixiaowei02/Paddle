@@ -15,7 +15,7 @@
 #include "paddle/fluid/inference/utils/io_utils.h"
 #include <glog/logging.h>
 #include <gtest/gtest.h>
-#include "paddle/fluid/inference/api/helper.h"
+#include "paddle/fluid/inference/api/details/helper.h"
 
 namespace paddle {
 namespace inference {

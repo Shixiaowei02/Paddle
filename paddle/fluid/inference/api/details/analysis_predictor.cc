@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/inference/api/analysis_predictor.h"
+#include "paddle/fluid/inference/api/details/analysis_predictor.h"
 #include <glog/logging.h>
 #include <algorithm>
 #include <fstream>
@@ -32,7 +32,7 @@
 #include "paddle/fluid/framework/version.h"
 #include "paddle/fluid/inference/analysis/helper.h"
 #include "paddle/fluid/inference/analysis/passes/memory_optimize_pass.h"
-#include "paddle/fluid/inference/api/helper.h"
+#include "paddle/fluid/inference/api/details/helper.h"
 #include "paddle/fluid/inference/api/paddle_inference_pass.h"
 #include "paddle/fluid/inference/utils/singleton.h"
 #include "paddle/fluid/memory/memcpy.h"
@@ -47,7 +47,7 @@
 #endif
 
 #ifdef PADDLE_WITH_MKLDNN
-#include "paddle/fluid/inference/api/mkldnn_quantizer.h"
+#include "paddle/fluid/inference/api/details/mkldnn_quantizer.h"
 #endif
 
 #if PADDLE_WITH_TENSORRT

@@ -23,7 +23,7 @@
 
 #include "paddle/fluid/framework/data_type.h"
 #include "paddle/fluid/framework/scope.h"
-#include "paddle/fluid/inference/api/helper.h"
+#include "paddle/fluid/inference/api/details/helper.h"
 #include "paddle/fluid/inference/api/paddle_tensor.h"
 #include "paddle/fluid/platform/place.h"
 

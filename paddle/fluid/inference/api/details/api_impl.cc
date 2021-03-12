@@ -18,8 +18,8 @@ limitations under the License. */
 #include <string>
 
 #include "paddle/fluid/framework/feed_fetch_method.h"
-#include "paddle/fluid/inference/api/api_impl.h"
-#include "paddle/fluid/inference/api/helper.h"
+#include "paddle/fluid/inference/api/details/api_impl.h"
+#include "paddle/fluid/inference/api/details/helper.h"
 #include "paddle/fluid/platform/cpu_helper.h"
 #include "paddle/fluid/platform/profiler.h"
 

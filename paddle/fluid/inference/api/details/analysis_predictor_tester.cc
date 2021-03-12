@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/inference/api/analysis_predictor.h"
+#include "paddle/fluid/inference/api/details/analysis_predictor.h"
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <thread>  // NOLINT
 #include "paddle/fluid/framework/ir/pass.h"
 #include "paddle/fluid/framework/tensor.h"
-#include "paddle/fluid/inference/api/helper.h"
+#include "paddle/fluid/inference/api/details/helper.h"
 #include "paddle/fluid/inference/api/paddle_inference_api.h"
 #include "paddle/fluid/inference/tests/api/tester_helper.h"
 #include "paddle/fluid/platform/cpu_info.h"
 #ifdef PADDLE_WITH_MKLDNN
-#include "paddle/fluid/inference/api/mkldnn_quantizer.h"
+#include "paddle/fluid/inference/api/details/mkldnn_quantizer.h"
 #endif
 
 DEFINE_string(dirname, "", "dirname to tests.");

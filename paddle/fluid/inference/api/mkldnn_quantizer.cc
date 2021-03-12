@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/inference/api/mkldnn_quantizer.h"
+#include "paddle/fluid/inference/api/details/mkldnn_quantizer.h"
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -26,7 +26,7 @@
 #include "paddle/fluid/framework/operator.h"
 #include "paddle/fluid/framework/type_defs.h"
 #include "paddle/fluid/inference/analysis/analyzer.h"
-#include "paddle/fluid/inference/api/analysis_predictor.h"
+#include "paddle/fluid/inference/api/details/analysis_predictor.h"
 #include "paddle/fluid/platform/mkldnn_helper.h"
 #include "paddle/fluid/platform/place.h"
 #include "paddle/fluid/string/pretty_log.h"
