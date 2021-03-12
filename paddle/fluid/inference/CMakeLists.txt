@@ -68,9 +68,9 @@ set(SHARED_INFERENCE_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/../framework/data_feed.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../framework/data_feed_factory.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../framework/dataset_factory.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/api/api.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/api/api_impl.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/api/analysis_predictor.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/api/details/api.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/api/details/api_impl.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/api/details/analysis_predictor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/api/details/zero_copy_tensor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/io_utils.cc
     ${mkldnn_quantizer_src_file}

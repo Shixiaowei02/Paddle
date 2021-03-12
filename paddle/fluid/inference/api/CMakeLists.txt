@@ -25,4 +25,4 @@ if(WITH_MKLDNN)
   set(mkldnn_quantizer_cfg ${mkldnn_quantizer_cfg} PARENT_SCOPE)
 endif()
 
-include(details)
+add_subdirectory(details)
