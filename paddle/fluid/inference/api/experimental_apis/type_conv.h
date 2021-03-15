@@ -77,7 +77,7 @@ inline paddle::framework::platform::Place ConvPlaceType(PlaceType place, int dev
     case PlaceType::kXPU:
       return paddle::framework::platform::XPUPlace(device_id);
   }
-  return paddle::framework::platform::Place();
+  return paddle::framework::platform::Place{};
 }
 
 }

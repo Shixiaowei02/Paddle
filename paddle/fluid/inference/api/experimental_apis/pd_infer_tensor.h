@@ -42,6 +42,9 @@ public:
   const T* data() const;
 
   template <typename T>
+  T* mutable_data();
+
+  template <typename T>
   int64_t CopyDataFromHost(const T* data);
 
   template <typename T>

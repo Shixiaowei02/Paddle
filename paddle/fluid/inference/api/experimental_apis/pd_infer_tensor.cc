@@ -18,73 +18,67 @@
 #include "paddle/fluid/memory/allocation/allocator.h"
 #include "paddle/fluid/framework/lod_tensor.h"
 #include "paddle/fluid/framework/data_type.h"
+#include "paddle/fluid/platform/errors.h"
+#include "paddle/fluid/memory/malloc.h"
 
 namespace paddle_infer {
 
 struct Tensor::Impl {
 public:
-  Impl(PlaceType place) {
-    
-  }
-  size_t memory_size() const {
-    return shared_buffer == nullptr ? 0UL : shared_buffer->size() - offset;
-  }
-  void CheckMemorySize() const {
-    PADDLE_ENFORCE_NOT_NULL(shared_buffer, platform::errors::PreconditionNotMet(
-                                        "Tensor holds no memory. "
-                                        "Call Tensor::mutable_data firstly."));
-    PADDLE_ENFORCE_LE(
-        numel() * paddle::framework::SizeOfType(type, memory_size(),
-        platform::errors::PreconditionNotMet(
-            "Tensor's dimension is out of bound."
-            "Tensor's dimension must be equal or less than the size of its "
-            "memory."
-            "But received  Tensor's dimension is d%, memory's size is %d.",
-            numel() * SizeOfType(type, memory_size()));
-  }
+  size_t offset_{};
+  std::string name_;
+  std::vector<int64_t> shape_;
+  const paddle::framework::platform::Place place_;
+  std::vector<std::vector<size_t>> lod_;
+  std::shared_ptr<memory::Allocation> buffer_;
+  paddle::framework::proto::VarType::Type type_{};
+  paddle::framework::DataLayout layout_{paddle::framework::DataLayout::kNCHW};
 
-private:
-  size_t offset;
-  std::string name;
-  std::vector<int64_t> shape;
-  const paddle::framework::platform::Place place;
-  std::vector<std::vector<size_t>> lod;
-  std::shared_ptr<memory::Allocation> shared_buffer;
-  paddle::framework::proto::VarType::Type type{};
-  paddle::framework::DataLayout layout{paddle::framework::DataLayout::kNCHW};
-};
-
-class Tensor::Utils {
 public:
-  static ShallowCopy(Tensor* dst, const paddle::framework::LoDTensor& src) {
-    dst->impl_->SetOffset(lod_tensor.offset());
-    dst->impl_->SetShape(lod_tensor.dims().vectorize<int64_t>());
-    dst->impl_->SetSharedBuffer(lod_tensor.Holder());
-    dst->impl_->SetLoD(lod_tensor.lod());
-    dst->impl_->SetType(lod_tensor.type());
-    dst->impl_->SetDataLayout(lod_tensor.layout());
+  Impl(PlaceType place, int device_id = 0) : place_ {ConvPlaceType{place, device_id}} {}
+
+  size_t capacity() const {
+    return buffer_ == nullptr ? 0UL : buffer_->size() - offset_;
   }
 
-  static ShallowCopy(paddle::framework::LoDTensor* dst, const Tensor& src) {
-    CHECK(src.impl_->offset());
-    dst->Resize(src.impl_->shape());
-    dst->ResetHolderWithType(src.impl_->shared_buffer(), src.impl_->type());
-    dst->set_lod(src.impl_->lod());
-    dst->set_layout(src.impl_->layout());
+  int64_t numel() const {
+    return std::accumulate(shape_.begin(), shape_.end(), 1, std::multiplies<int64_t>());
   }
+
+  size_t bytes_size() const {
+    return numel() * paddle::framework::SizeOfType(type_);
+  }
+
+  bool capacity_enough() const {
+    return bytes_size() <= capacity();
+  }
+
+  void* mutable_data() {
+    CHECK(buffer_);
+    return buffer_->ptr();
+  }
+
+  void* ReallocLazy(size_t capacity = 0) {
+    if (capacity) {
+      CHECK_GE(capacity, bytes_size());
+      if (!capacity_enough()) {
+        buffer_ = paddle::memory::AllocShared(place_, capacity);
+        offset_ = 0;
+      }
+    } else {
+      CHECK(bytes_size() > 0);
+      ReallocLazy(bytes_size());
+    }
+    return mutable_data();
+  }
+
 };
 
-Tensor::Tensor() {
+Tensor::Tensor() : Tensor{PlaceType::kHost} {}
 
-}
+Tensor::Tensor(PlaceType place) : Tensor{place, 0} {}
 
-Tensor::Tensor(PlaceType place) {
-
-}
-
-Tensor::Tensor(PlaceType place, int device_id) {
-
-}
+Tensor::Tensor(PlaceType place, int device_id) : impl_{std::unique_ptr(newImpl{place, device_id})} {}
 
 void Tensor::Reshape(const std::vector<int64_t>& shape) {
   impl_->shape = shape;
@@ -104,7 +98,14 @@ const std::vector<std::vector<size_t>>& Tensor::lod() const {
 
 template <typename T>
 const T* Tensor::data() const {
-  return impl_->shared_buffer.
+  CHECK(impl_->buffer_);
+  return impl_->buffer_->ptr();
+}
+
+template <typename T>
+T* Tensor::mutable_data() {
+  CHECK(impl_->buffer_);
+  return impl_->buffer_->ptr();
 }
 
 template <typename T>
@@ -136,5 +137,26 @@ PlaceType Tensor::place() const {
 DataType Tensor::type() const {
 
 }
+
+
+class Tensor::Utils {
+public:
+  static ShallowCopy(Tensor* dst, const paddle::framework::LoDTensor& src) {
+    dst->impl_->SetOffset(lod_tensor.offset());
+    dst->impl_->SetShape(lod_tensor.dims().vectorize<int64_t>());
+    dst->impl_->SetSharedBuffer(lod_tensor.Holder());
+    dst->impl_->SetLoD(lod_tensor.lod());
+    dst->impl_->SetType(lod_tensor.type());
+    dst->impl_->SetDataLayout(lod_tensor.layout());
+  }
+
+  static ShallowCopy(paddle::framework::LoDTensor* dst, const Tensor& src) {
+    CHECK(src.impl_->offset());
+    dst->Resize(src.impl_->shape());
+    dst->ResetHolderWithType(src.impl_->shared_buffer(), src.impl_->type());
+    dst->set_lod(src.impl_->lod());
+    dst->set_layout(src.impl_->layout());
+  }
+};
 
 }
