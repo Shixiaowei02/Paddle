@@ -52,6 +52,8 @@ public:
 
   void CopyDataFrom(const Tensor& tensor);
 
+  void SetName(const std::string& name);
+
   const std::string& name() const;
 
   int device_id() const;

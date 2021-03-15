@@ -98,13 +98,13 @@ const std::vector<std::vector<size_t>>& Tensor::lod() const {
 
 template <typename T>
 const T* Tensor::data() const {
-  CHECK(impl_->buffer_);
+  CHECK(capacity());
   return impl_->buffer_->ptr();
 }
 
 template <typename T>
 T* Tensor::mutable_data() {
-  CHECK(impl_->buffer_);
+  ReallocLazy();
   return impl_->buffer_->ptr();
 }
 
@@ -122,20 +122,24 @@ void Tensor::CopyDataFrom(const Tensor& tensor) {
 
 }
 
-const std::string& Tensor::name() const {
+void Tensor::SetName(const std::string& name) {
+  impl_->name_ = name;
+}
 
+const std::string& Tensor::name() const {
+  return impl_->name_;
 }
 
 int Tensor::device_id() const {
-
+  return impl_->device_id_;
 }
 
 PlaceType Tensor::place() const {
-
+  return ConvPlaceType(impl_->place_);
 }
 
 DataType Tensor::type() const {
-
+  return ConvDataType(impl_->type_);
 }
 
 
