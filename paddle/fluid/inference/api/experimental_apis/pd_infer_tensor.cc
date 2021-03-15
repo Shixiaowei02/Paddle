@@ -23,48 +23,14 @@ namespace paddle_infer {
 
 struct Tensor::Impl {
 public:
-  size_t offset() const {
-    return offset_;
+  Impl(PlaceType place) {
+    
   }
-  void SetOffset(size_t offset) {
-    offset_ = offset;
-  }
-  const std::vector<int64_t>& shape() const {
-    return shape_;
-  }
-  void SetShape(std::vector<int64_t>& shape) {
-    shape_ = shape;
-  }
-  void SetLoD(std::vector<std::vector<size_t>>& lod) {
-    lod_ = lod;
-  }
-  const std::vector<std::vector<size_t>>& lod() const {
-    return lod_;
-  }
-  void SetSharedBuffer(std::shared_ptr<memory::Allocation> buffer) {
-    shared_buffer_ = buffer;
-  }
-  std::shared_ptr<memory::Allocation> GetSharedBuffer() const {
-    return shared_buffer_;
-  }
-  const void SetType(paddle::framework::proto::VarType::Type type) {
-    type_ = type;
-  }
-  paddle::framework::proto::VarType::Type type() const {
-    return type_;
-  }
-  const void SetDataLayout(paddle::framework::DataLayout layout) {
-    layout_ = layout;
-  }
-  paddle::framework::DataLayout GetLayout() const {
-    return layout_;
-  }
-public:
   size_t memory_size() const {
     return shared_buffer == nullptr ? 0UL : shared_buffer->size() - offset;
   }
   void CheckMemorySize() const {
-    PADDLE_ENFORCE_NOT_NULL(shared_buffer(), platform::errors::PreconditionNotMet(
+    PADDLE_ENFORCE_NOT_NULL(shared_buffer, platform::errors::PreconditionNotMet(
                                         "Tensor holds no memory. "
                                         "Call Tensor::mutable_data firstly."));
     PADDLE_ENFORCE_LE(
@@ -74,16 +40,18 @@ public:
             "Tensor's dimension must be equal or less than the size of its "
             "memory."
             "But received  Tensor's dimension is d%, memory's size is %d.",
-            numel() * SizeOfType(type()), memory_size()));
+            numel() * SizeOfType(type, memory_size()));
   }
 
 private:
-  size_t offset_;
-  std::vector<int64_t> shape_;
-  std::vector<std::vector<size_t>> lod_;
-  std::shared_ptr<memory::Allocation> shared_buffer_;
-  paddle::framework::proto::VarType::Type type_{};
-  paddle::framework::DataLayout layout_{paddle::framework::DataLayout::kNCHW};
+  size_t offset;
+  std::string name;
+  std::vector<int64_t> shape;
+  const paddle::framework::platform::Place place;
+  std::vector<std::vector<size_t>> lod;
+  std::shared_ptr<memory::Allocation> shared_buffer;
+  paddle::framework::proto::VarType::Type type{};
+  paddle::framework::DataLayout layout{paddle::framework::DataLayout::kNCHW};
 };
 
 class Tensor::Utils {
@@ -107,6 +75,14 @@ public:
 };
 
 Tensor::Tensor() {
+
+}
+
+Tensor::Tensor(PlaceType place) {
+
+}
+
+Tensor::Tensor(PlaceType place, int device_id) {
 
 }
 
@@ -145,5 +121,20 @@ void Tensor::CopyDataFrom(const Tensor& tensor) {
 
 }
 
+const std::string& Tensor::name() const {
+
+}
+
+int Tensor::device_id() const {
+
+}
+
+PlaceType Tensor::place() const {
+
+}
+
+DataType Tensor::type() const {
+
+}
 
 }

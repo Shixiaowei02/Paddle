@@ -62,7 +62,7 @@ private:
   friend class Utils;
   Tensor(const Tensor&);
   Tensor& operator=(const Tensor&);
-  std::unique_ptr<Impl> impl_;
+  const std::unique_ptr<Impl> impl_;
 };
 
 }

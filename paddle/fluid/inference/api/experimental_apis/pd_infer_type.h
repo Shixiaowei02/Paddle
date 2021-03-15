@@ -24,6 +24,7 @@ enum class DataType {
   INT32,
   UINT8,
   INT8,
+  FLOAT16,
 };
 
 enum class PlaceType { kUnk = -1, kHost, kGPU, kXPU };
