@@ -17,7 +17,8 @@
 namespace paddle_infer {
 
 /// \brief Paddle data type.
-enum DataType {
+enum class DataType {
+  UNK = -1,
   FLOAT32,
   INT64,
   INT32,
@@ -28,7 +29,8 @@ enum DataType {
 enum class PlaceType { kUnk = -1, kHost, kGPU, kXPU };
 
 enum class Precision {
-  kFloat32 = 0,  ///< fp32
+  kUnk = -1,
+  kFloat32,  ///< fp32
   kInt8,         ///< int8
   kHalf,         ///< fp16
 };

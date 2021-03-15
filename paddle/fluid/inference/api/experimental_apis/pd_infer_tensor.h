@@ -24,32 +24,42 @@ namespace paddle_infer {
 
 class PD_INFER_DECL Tensor {
 public:
-  explicit Tensor(const PlaceType& place);
+  Tensor();
+
+  explicit Tensor(PlaceType place);
+
+  Tensor(PlaceType place, int device_id);
 
   void Reshape(const std::vector<int64_t>& shape);
 
-  std::vector<int64_t> shape() const;
+  const std::vector<int64_t>& shape() const;
 
-  void SetLoD(const std::vector<std::vector<size_t>>& x);
+  void SetLoD(const std::vector<std::vector<size_t>>& lod);
 
-  std::vector<std::vector<size_t>> lod() const;
-
-  template <typename T>
-  T* mutable_data();
+  const std::vector<std::vector<size_t>>& lod() const;
 
   template <typename T>
   const T* data() const;
 
   template <typename T>
-  void CopyFromHost(const T* data);
+  int64_t CopyDataFromHost(const T* data);
 
   template <typename T>
-  void CopyToHost(T* data) const;
+  int64_t CopyDataToHost(T* data) const;
 
   void CopyDataFrom(const Tensor& tensor);
 
+  const std::string& name() const;
+
+  int device_id() const;
+
+  PlaceType place() const;
+
+  DataType type() const;
+
 private:
   struct Impl;
+  friend class Utils;
   Tensor(const Tensor&);
   Tensor& operator=(const Tensor&);
   std::unique_ptr<Impl> impl_;
