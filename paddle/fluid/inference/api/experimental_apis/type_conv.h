@@ -20,18 +20,18 @@ namespace paddle_infer {
 
 inline DataType ConvDataType(paddle::framework::proto::VarType::Type type) {
   switch (type) {
-    case framework::proto::VarType_Type_FP16:
+    case paddle::framework::proto::VarType_Type_FP16:
       return DataType::FLOAT16;
-    case framework::proto::VarType_Type_FP32:
+    case paddle::framework::proto::VarType_Type_FP32:
       return DataType::FLOAT32;
-    case framework::proto::VarType_Type_INT8:
+    case paddle::framework::proto::VarType_Type_INT8:
       return DataType::INT8;
-    case framework::proto::VarType_Type_INT32:
+    case paddle::framework::proto::VarType_Type_INT32:
       return DataType::INT32;
-    case framework::proto::VarType_Type_INT64:
+    case paddle::framework::proto::VarType_Type_INT64:
       return DataType::INT64;
     default:
-      PADDLE_THROW(platform::errors::Unimplemented(
+      PADDLE_THROW(paddle::platform::errors::Unimplemented(
           "Unsupported precision type. Now only supports FP16, FP32, INT8, INT32 and "
           "INT64."));
       return DataType::UNK;
@@ -41,23 +41,23 @@ inline DataType ConvDataType(paddle::framework::proto::VarType::Type type) {
 inline paddle::framework::proto::VarType::Type ConvDataType(DataType type) {
   switch (type) {
     case DataType::FLOAT16:
-      return framework::proto::VarType_Type_FP16;
+      return paddle::framework::proto::VarType_Type_FP16;
     case DataType::FLOAT32:
-      return framework::proto::VarType_Type_FP32;
+      return paddle::framework::proto::VarType_Type_FP32;
     case DataType::INT8:
-      return framework::proto::VarType_Type_INT8;
+      return paddle::framework::proto::VarType_Type_INT8;
     case DataType::INT32:
-      return framework::proto::VarType_Type_INT32;
+      return paddle::framework::proto::VarType_Type_INT32;
     case DataType::INT64:
-      return framework::proto::VarType_Type_INT64;
+      return paddle::framework::proto::VarType_Type_INT64;
     default:
-      PADDLE_THROW(platform::errors::Unimplemented(
+      PADDLE_THROW(paddle::platform::errors::Unimplemented(
           "Unsupported precision type. Now only supports FP16, FP32, INT8, INT32 and "
           "INT64."));
       return static_cast<paddle::framework::proto::VarType::Type>(-1);
 }
 
-inline PlaceType ConvPlaceType(const paddle::framework::platform::Place& place) {
+inline PlaceType ConvPlaceType(const paddle::platform::Place& place) {
   if (paddle::platform::is_cpu_place(place)) {
     return PlaceType::kHost;
   } else if (paddle::platform::is_gpu_place(place)) { 
@@ -66,6 +66,7 @@ inline PlaceType ConvPlaceType(const paddle::framework::platform::Place& place) 
     return PlaceType::kXPU;
   }
   return PlaceType::kUnk;
+}
 
 inline paddle::framework::platform::Place ConvPlaceType(PlaceType place, int device_id) {
   paddle::framework::platform::Place ret;

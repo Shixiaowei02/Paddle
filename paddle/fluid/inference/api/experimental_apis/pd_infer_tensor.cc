@@ -14,6 +14,7 @@
 
 #include <memory>
 
+#include "paddle/fluid/inference/api/experimental_apis/type_conv.h"
 #include "paddle/fluid/inference/api/experimental_apis/pd_infer_tensor.h"
 #include "paddle/fluid/memory/allocation/allocator.h"
 #include "paddle/fluid/framework/lod_tensor.h"
@@ -28,9 +29,9 @@ public:
   size_t offset_{};
   std::string name_;
   std::vector<int64_t> shape_;
-  const paddle::framework::platform::Place place_;
+  const paddle::platform::Place place_;
   std::vector<std::vector<size_t>> lod_;
-  std::shared_ptr<memory::Allocation> buffer_;
+  std::shared_ptr<paddle::memory::allocation::Allocation> buffer_;
   paddle::framework::proto::VarType::Type type_{};
   paddle::framework::DataLayout layout_{paddle::framework::DataLayout::kNCHW};
 
@@ -49,19 +50,19 @@ public:
     return numel() * paddle::framework::SizeOfType(type_);
   }
 
-  bool capacity_enough() const {
-    return bytes_size() <= capacity();
+  bool CheckCapacity() const {
+    return capacity() && bytes_size() <= capacity();
   }
 
-  void* mutable_data() {
-    CHECK(buffer_);
-    return buffer_->ptr();
+  void* mutable_data() const {
+    CHECK(CheckCapacity());
+    return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(buffer_->ptr()) +
+                                  offset_);
   }
 
-  void* ReallocLazy(size_t capacity = 0) {
+  void ReallocLazy(size_t capacity = 0) {
     if (capacity) {
-      CHECK_GE(capacity, bytes_size());
-      if (!capacity_enough()) {
+      if (bytes_size() > capacity) {
         buffer_ = paddle::memory::AllocShared(place_, capacity);
         offset_ = 0;
       }
@@ -69,7 +70,6 @@ public:
       CHECK(bytes_size() > 0);
       ReallocLazy(bytes_size());
     }
-    return mutable_data();
   }
 
 };
@@ -78,7 +78,7 @@ Tensor::Tensor() : Tensor{PlaceType::kHost} {}
 
 Tensor::Tensor(PlaceType place) : Tensor{place, 0} {}
 
-Tensor::Tensor(PlaceType place, int device_id) : impl_{std::unique_ptr(newImpl{place, device_id})} {}
+Tensor::Tensor(PlaceType place, int device_id) : impl_{std::unique_ptr(new Impl{place, device_id})} {}
 
 void Tensor::Reshape(const std::vector<int64_t>& shape) {
   impl_->shape = shape;
@@ -98,14 +98,13 @@ const std::vector<std::vector<size_t>>& Tensor::lod() const {
 
 template <typename T>
 const T* Tensor::data() const {
-  CHECK(capacity());
-  return impl_->buffer_->ptr();
+  return impl_->mutable_data();
 }
 
 template <typename T>
 T* Tensor::mutable_data() {
-  ReallocLazy();
-  return impl_->buffer_->ptr();
+  impl_->ReallocLazy();
+  return impl_->mutable_data();
 }
 
 template <typename T>
