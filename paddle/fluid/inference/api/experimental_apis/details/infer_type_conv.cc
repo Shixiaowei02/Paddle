@@ -53,6 +53,7 @@ paddle::framework::proto::VarType::Type ConvDataType(DataType type) {
           "Unsupported precision type. Now only supports FP16, FP32, INT8, INT32 and "
           "INT64."));
       return static_cast<paddle::framework::proto::VarType::Type>(-1);
+  }
 }
 
 PlaceType ConvPlaceType(const paddle::platform::Place& place) {
@@ -77,6 +78,17 @@ paddle::platform::Place ConvPlaceType(PlaceType place, int device_id) {
       return paddle::platform::XPUPlace(device_id);
   }
   return paddle::platform::Place{};
+}
+
+int GetDeviceID(const paddle::platform::Place& place) {
+  if (paddle::platform::is_cpu_place(place)) {
+    return BOOST_GET_CONST(platform::CPUPlace, places).GetDeviceId();
+  } else if (paddle::platform::is_gpu_place(place)) { 
+    return BOOST_GET_CONST(platform::CUDAPlace, places).GetDeviceId();
+  } else if (paddle::platform::is_xpu_place(place)) { 
+    return BOOST_GET_CONST(platform::XPUPlace, places).GetDeviceId();
+  }
+  return -1;
 }
 
 }

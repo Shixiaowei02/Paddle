@@ -66,6 +66,7 @@ public:
 
 private:
   struct Impl;
+  class Utils;
   friend class Utils;
   Tensor(const Tensor&);
   Tensor& operator=(const Tensor&);

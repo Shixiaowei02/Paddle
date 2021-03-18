@@ -36,10 +36,10 @@ public:
   paddle::framework::DataLayout layout_{paddle::framework::DataLayout::kNCHW};
 
 public:
-  Impl(PlaceType place, int device_id = 0) : place_ {ConvPlaceType{place, device_id}} {}
+  Impl(PlaceType place, int device_id = 0) : place_ {ConvPlaceType(place, device_id)} {}
 
   size_t capacity() const {
-    return buffer_ == nullptr ? 0UL : buffer_->size() - offset_;
+    return buffer_ == nullptr ? 0UL : buffer_->size();
   }
 
   int64_t numel() const {
@@ -92,22 +92,22 @@ Tensor::Tensor() : Tensor{PlaceType::kHost} {}
 
 Tensor::Tensor(PlaceType place) : Tensor{place, 0} {}
 
-Tensor::Tensor(PlaceType place, int device_id) : impl_{std::unique_ptr(new Impl{place, device_id})} {}
+Tensor::Tensor(PlaceType place, int device_id) : impl_{std::unique_ptr<Impl>(new Impl{place, device_id})} {}
 
 void Tensor::Reshape(const std::vector<int64_t>& shape) {
-  impl_->shape = shape;
+  impl_->shape_ = shape;
 }
 
 const std::vector<int64_t>& Tensor::shape() const {
-  return impl_->shape;
+  return impl_->shape_;
 }
 
 void Tensor::SetLoD(const std::vector<std::vector<size_t>>& lod) {
-  impl_->lod = lod;
+  impl_->lod_ = lod;
 }
 
 const std::vector<std::vector<size_t>>& Tensor::lod() const {
-  return impl_->lod;
+  return impl_->lod_;
 }
 
 template <typename T>
@@ -138,8 +138,7 @@ int64_t Tensor::CopyDataToHost(T* dst) const {
 
 void Tensor::CopyDataFrom(const Tensor& tensor) {
   Reshape(tensor.shape());
-  const T* src{tensor.data<void>()};
-  T* dst{mutable_data}
+  paddle::memory::Copy(impl_->place_, mutable_data<void>(), ConvPlaceType(PlaceType::kHost, tensor.device_id()), tensor.data<void>(), bytes_size(tensor));
 }
 
 void Tensor::SetName(const std::string& name) {
@@ -151,7 +150,7 @@ const std::string& Tensor::name() const {
 }
 
 int Tensor::device_id() const {
-  return impl_->device_id_;
+  return GetDeviceID(impl_->place_);
 }
 
 PlaceType Tensor::place() const {
@@ -169,20 +168,22 @@ size_t Tensor::capacity() const {
 
 class Tensor::Utils {
 public:
-  static ShallowCopy(Tensor* dst, const paddle::framework::LoDTensor& src) {
-    Tensor::Impl* impl{dst->impl_};
-    impl->SetShape(lod_tensor.dims().vectorize<int64_t>());
-    impl->SetSharedBuffer(lod_tensor.Holder());
-    impl->SetLoD(lod_tensor.lod());
-    impl->SetType(lod_tensor.type());
-    impl->SetDataLayout(lod_tensor.layout());
+  static void ShallowCopy(Tensor* dst, const paddle::framework::LoDTensor& src) {
+    Tensor::Impl* impl{dst->impl_.get()};
+    impl->shape_ = paddle::framework::vectorize<int64_t>(src.dims());
+    impl->buffer_ = src.Holder();
+    impl->type_ = src.type();
+    impl->layout_ = src.layout();
+    for (const auto& lod: src.lod()) {
+      impl->lod_.emplace_back(lod);
+    }
   }
 
-  static ShallowCopy(paddle::framework::LoDTensor* dst, const Tensor& src) {
-    dst->Resize(src.impl_->shape());
-    dst->ResetHolderWithType(src.impl_->shared_buffer(), src.impl_->type());
-    dst->set_lod(src.impl_->lod());
-    dst->set_layout(src.impl_->layout());
+  static void ShallowCopy(paddle::framework::LoDTensor* dst, const Tensor& src) {
+    dst->Resize(paddle::framework::make_ddim(src.impl_->shape_));
+    dst->ResetHolderWithType(src.impl_->buffer_, src.impl_->type_);
+    dst->set_lod(src.impl_->lod_);
+    dst->set_layout(src.impl_->layout_);
   }
 };
 
@@ -191,7 +192,7 @@ int64_t numel(const Tensor& tensor) {
 }
 
 size_t bytes_size(const Tensor& tensor) {
-  return tensor.numel() * SizeOfDataType(tensor.type());
+  return numel(tensor) * SizeOfDataType(tensor.type());
 }
 
 }

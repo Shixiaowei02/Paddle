@@ -19,6 +19,8 @@ endif(APPLE)
 
 add_subdirectory(details)
 
+add_subdirectory(experimental_apis/details)
+
 if(WITH_MKLDNN)
   set(mkldnn_quantizer_src ${CMAKE_CURRENT_SOURCE_DIR}/mkldnn_quantizer.cc)
   set(mkldnn_quantizer_cfg mkldnn_quantizer_config)

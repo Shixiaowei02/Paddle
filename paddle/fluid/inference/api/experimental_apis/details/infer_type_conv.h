@@ -22,5 +22,6 @@ DataType ConvDataType(paddle::framework::proto::VarType::Type type);
 paddle::framework::proto::VarType::Type ConvDataType(DataType type);
 PlaceType ConvPlaceType(const paddle::platform::Place& place);
 paddle::platform::Place ConvPlaceType(PlaceType place, int device_id);
+int GetDeviceID(const paddle::platform::Place& place);
 
 }
