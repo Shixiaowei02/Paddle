@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/inference/api/experimental_apis/details/type_conv.h"
+#include "paddle/fluid/inference/api/experimental_apis/details/infer_type_conv.h"
 
 namespace paddle_infer {
 

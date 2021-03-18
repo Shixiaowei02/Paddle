@@ -14,7 +14,7 @@
 
 #include <memory>
 
-#include "paddle/fluid/inference/api/experimental_apis/type_conv.h"
+#include "paddle/fluid/inference/api/experimental_apis/details/infer_type_conv.h"
 #include "paddle/fluid/inference/api/experimental_apis/pd_infer_tensor.h"
 #include "paddle/fluid/memory/allocation/allocator.h"
 #include "paddle/fluid/framework/lod_tensor.h"

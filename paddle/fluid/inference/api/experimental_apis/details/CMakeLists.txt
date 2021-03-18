@@ -12,3 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+cc_library(infer_tensor SRCS pd_infer_tensor.cc DEPS lod_tensor scope)
+
+cc_library(infer_type SRCS pd_infer_type.cc DEPS lod_tensor scope)
+
+cc_library(infer_type_conv SRCS infer_type_conv.cc DEPS lod_tensor scope)

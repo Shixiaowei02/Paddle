@@ -17,8 +17,8 @@
 #include <vector>
 #include <memory>
 
-#include "pd_infer_type.h"
-#include "pd_infer_declare.h"
+#include "pd_infer_type.h" // NOLINT
+#include "pd_infer_declare.h" // NOLINT
 
 namespace paddle_infer {
 

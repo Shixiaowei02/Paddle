@@ -16,10 +16,12 @@
 
 #include <cstdlib>
 
+#include "pd_infer_declare.h" // NOLINT
+
 namespace paddle_infer {
 
 /// \brief Paddle data type.
-enum class DataType {
+enum class PD_INFER_DECL DataType {
   UNK = -1,
   FLOAT32,
   INT64,
@@ -29,15 +31,15 @@ enum class DataType {
   FLOAT16,
 };
 
-enum class PlaceType { kUnk = -1, kHost, kGPU, kXPU };
+enum class PD_INFER_DECL PlaceType { kUnk = -1, kHost, kGPU, kXPU };
 
-enum class Precision {
+enum class PD_INFER_DECL Precision {
   kUnk = -1,
   kFloat32,  ///< fp32
   kInt8,         ///< int8
   kHalf,         ///< fp16
 };
 
-size_t SizeOfDataType(DataType type);
+PD_INFER_DECL size_t SizeOfDataType(DataType type);
 
 } // namespace paddle_infer
