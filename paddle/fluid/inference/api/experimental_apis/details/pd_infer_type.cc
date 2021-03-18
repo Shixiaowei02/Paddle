@@ -12,32 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <cstdlib>
+#include "paddle/fluid/inference/api/experimental_apis/pd_infer_type.h"
+#include "paddle/fluid/platform/enforce.h"
 
 namespace paddle_infer {
 
-/// \brief Paddle data type.
-enum class DataType {
-  UNK = -1,
-  FLOAT32,
-  INT64,
-  INT32,
-  UINT8,
-  INT8,
-  FLOAT16,
-};
+size_t SizeOfDataType(DataType type) {
+  switch (type) {
+    case DataType::FLOAT32:
+      return 32;
+    case DataType::INT64:
+      return 64;
+    case DataType::INT32:
+      return 32;
+    case DataType::UINT8:
+      return 8;
+    case DataType::INT8:
+      return 8;
+    case DataType::FLOAT16:
+      return 16;
+    default:
+      PADDLE_THROW(paddle::platform::errors::Unimplemented(
+          "Unsupported precision type. Now only supports FP16, FP32, INT8, INT32 and "
+          "INT64."));
+      return 0;
+  }
+}
 
-enum class PlaceType { kUnk = -1, kHost, kGPU, kXPU };
-
-enum class Precision {
-  kUnk = -1,
-  kFloat32,  ///< fp32
-  kInt8,         ///< int8
-  kHalf,         ///< fp16
-};
-
-size_t SizeOfDataType(DataType type);
-
-} // namespace paddle_infer
+}

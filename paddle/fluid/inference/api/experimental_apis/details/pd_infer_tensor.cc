@@ -19,14 +19,14 @@
 #include "paddle/fluid/memory/allocation/allocator.h"
 #include "paddle/fluid/framework/lod_tensor.h"
 #include "paddle/fluid/framework/data_type.h"
-#include "paddle/fluid/platform/errors.h"
+#include "paddle/fluid/platform/enforce.h"
 #include "paddle/fluid/memory/malloc.h"
+#include "paddle/fluid/memory/memcpy.h"
 
 namespace paddle_infer {
 
 struct Tensor::Impl {
 public:
-  size_t offset_{};
   std::string name_;
   std::vector<int64_t> shape_;
   const paddle::platform::Place place_;
@@ -54,22 +54,36 @@ public:
     return capacity() && bytes_size() <= capacity();
   }
 
-  void* mutable_data() const {
-    CHECK(CheckCapacity());
-    return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(buffer_->ptr()) +
-                                  offset_);
-  }
-
   void ReallocLazy(size_t capacity = 0) {
     if (capacity) {
       if (bytes_size() > capacity) {
         buffer_ = paddle::memory::AllocShared(place_, capacity);
-        offset_ = 0;
       }
     } else {
       CHECK(bytes_size() > 0);
       ReallocLazy(bytes_size());
     }
+  }
+
+  template <typename T>
+  bool CheckDataType() {
+    return type_ == paddle::framework::DataTypeTrait<T>::DataType();
+  }
+
+  template <typename T>
+  const T* data() const {
+    CHECK(CheckDataType<T>());
+    return reinterpret_cast<const T*>(reinterpret_cast<uintptr_t>(buffer_->ptr()));
+  }
+
+  template <typename T>
+  T* mutable_data() {
+    if (!CheckDataType<T>()) {
+      type_ = paddle::framework::DataTypeTrait<T>::DataType();
+    }
+    ReallocLazy();
+    CHECK(CheckCapacity());
+    return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(buffer_->ptr()));
   }
 
 };
@@ -98,27 +112,34 @@ const std::vector<std::vector<size_t>>& Tensor::lod() const {
 
 template <typename T>
 const T* Tensor::data() const {
-  return impl_->mutable_data();
+  return impl_->data();
 }
 
 template <typename T>
 T* Tensor::mutable_data() {
-  impl_->ReallocLazy();
   return impl_->mutable_data();
 }
 
 template <typename T>
-int64_t Tensor::CopyFromHost(const T* data) {
-
+int64_t Tensor::CopyDataFromHost(const T* src) {
+  T* dst{mutable_data<T>()};
+  size_t bytes_size{impl_->bytes_size()};
+  paddle::memory::Copy(impl_->place_, dst, paddle::CPUPlace(), src, bytes_size);
+  return bytes_size;
 }
 
 template <typename T>
-int64_t Tensor::CopyToHost(T* data) const {
-
+int64_t Tensor::CopyDataToHost(T* dst) const {
+  const T* src{data<T>()};
+  size_t bytes_size{impl_->bytes_size()};
+  paddle::memory::Copy(paddle::CPUPlace(), dst, impl_->place_, src, bytes_size);
+  return bytes_size;
 }
 
 void Tensor::CopyDataFrom(const Tensor& tensor) {
-
+  Reshape(tensor.shape());
+  const T* src{tensor.data<void>()};
+  T* dst{mutable_data}
 }
 
 void Tensor::SetName(const std::string& name) {
@@ -141,25 +162,36 @@ DataType Tensor::type() const {
   return ConvDataType(impl_->type_);
 }
 
+size_t Tensor::capacity() const {
+  return impl_->capacity();
+}
+
 
 class Tensor::Utils {
 public:
   static ShallowCopy(Tensor* dst, const paddle::framework::LoDTensor& src) {
-    dst->impl_->SetOffset(lod_tensor.offset());
-    dst->impl_->SetShape(lod_tensor.dims().vectorize<int64_t>());
-    dst->impl_->SetSharedBuffer(lod_tensor.Holder());
-    dst->impl_->SetLoD(lod_tensor.lod());
-    dst->impl_->SetType(lod_tensor.type());
-    dst->impl_->SetDataLayout(lod_tensor.layout());
+    Tensor::Impl* impl{dst->impl_};
+    impl->SetShape(lod_tensor.dims().vectorize<int64_t>());
+    impl->SetSharedBuffer(lod_tensor.Holder());
+    impl->SetLoD(lod_tensor.lod());
+    impl->SetType(lod_tensor.type());
+    impl->SetDataLayout(lod_tensor.layout());
   }
 
   static ShallowCopy(paddle::framework::LoDTensor* dst, const Tensor& src) {
-    CHECK(src.impl_->offset());
     dst->Resize(src.impl_->shape());
     dst->ResetHolderWithType(src.impl_->shared_buffer(), src.impl_->type());
     dst->set_lod(src.impl_->lod());
     dst->set_layout(src.impl_->layout());
   }
 };
+
+int64_t numel(const Tensor& tensor) {
+  return std::accumulate(tensor.shape().begin(), tensor.shape().end(), 1, std::multiplies<int64_t>());
+}
+
+size_t bytes_size(const Tensor& tensor) {
+  return tensor.numel() * SizeOfDataType(tensor.type());
+}
 
 }

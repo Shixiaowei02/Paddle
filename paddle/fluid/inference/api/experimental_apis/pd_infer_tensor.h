@@ -45,10 +45,10 @@ public:
   T* mutable_data();
 
   template <typename T>
-  int64_t CopyDataFromHost(const T* data);
+  int64_t CopyDataFromHost(const T* src);
 
   template <typename T>
-  int64_t CopyDataToHost(T* data) const;
+  int64_t CopyDataToHost(T* dst) const;
 
   void CopyDataFrom(const Tensor& tensor);
 
@@ -57,6 +57,8 @@ public:
   const std::string& name() const;
 
   int device_id() const;
+
+  size_t capacity() const;
 
   PlaceType place() const;
 
@@ -69,5 +71,9 @@ private:
   Tensor& operator=(const Tensor&);
   const std::unique_ptr<Impl> impl_;
 };
+
+int64_t numel(const Tensor& tensor);
+
+size_t bytes_size(const Tensor& tensor);
 
 }
