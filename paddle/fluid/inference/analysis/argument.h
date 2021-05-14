@@ -81,7 +81,7 @@ struct Argument {
   type__& field__() {                                                    \
     PADDLE_ENFORCE_EQ(                                                   \
         Has(#field__), true,                                             \
-        platform::errors::PreconditionNotMet("There is no such field")); \
+        ::paddle::platform::errors::PreconditionNotMet("There is no such field")); \
     return field__##_;                                                   \
   }                                                                      \
   void Set##Field(const type__& x) {                                     \
@@ -100,11 +100,11 @@ struct Argument {
 #define DECL_ARGUMENT_UNIQUE_FIELD(field__, Field, type__)                    \
  public:                                                                      \
   type__& field__() {                                                         \
-    PADDLE_ENFORCE_NOT_NULL(field__##_, platform::errors::PreconditionNotMet( \
+    PADDLE_ENFORCE_NOT_NULL(field__##_, ::paddle::platform::errors::PreconditionNotMet( \
                                             "filed should not be null."));    \
     PADDLE_ENFORCE_EQ(                                                        \
         Has(#field__), true,                                                  \
-        platform::errors::PreconditionNotMet("There is no such field"));      \
+        ::paddle::platform::errors::PreconditionNotMet("There is no such field"));      \
     return *static_cast<type__*>(field__##_.get());                           \
   }                                                                           \
   void Set##Field(type__* x) {                                                \
@@ -120,13 +120,13 @@ struct Argument {
   type__* field__##_ptr() {                                                   \
     PADDLE_ENFORCE_EQ(                                                        \
         Has(#field__), true,                                                  \
-        platform::errors::PreconditionNotMet("There is no such field"));      \
+        ::paddle::platform::errors::PreconditionNotMet("There is no such field"));      \
     return static_cast<type__*>(field__##_.get());                            \
   }                                                                           \
   type__* Release##Field() {                                                  \
     PADDLE_ENFORCE_EQ(                                                        \
         Has(#field__), true,                                                  \
-        platform::errors::PreconditionNotMet("There is no such field"));      \
+        ::paddle::platform::errors::PreconditionNotMet("There is no such field"));      \
     valid_fields_.erase(#field__);                                            \
     return static_cast<type__*>(field__##_.release());                        \
   }                                                                           \
@@ -257,7 +257,7 @@ struct Argument {
 #define ARGUMENT_CHECK_FIELD(argument__, fieldname__) \
   PADDLE_ENFORCE_EQ(                                  \
       argument__->Has(#fieldname__), true,            \
-      platform::errors::PreconditionNotMet(           \
+      ::paddle::platform::errors::PreconditionNotMet(           \
           "the argument field [%s] should be set", #fieldname__));
 
 }  // namespace analysis

@@ -41,6 +41,7 @@ get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
 include_directories(${PADDLE_SOURCE_DIR}/paddle/fluid/platform)
 
 add_subdirectory(api)
+add_subdirectory(trt_pred)
 
 # Create static inference library if needed
 # All static libs in inference/api

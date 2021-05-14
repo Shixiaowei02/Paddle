@@ -42,6 +42,12 @@
 #include "paddle_mkldnn_quantizer_config.h"  // NOLINT
 #endif
 
+namespace paddle_infer {
+namespace tensorrt {
+  class Predictor;
+}
+}
+
 namespace paddle {
 
 class AnalysisPredictor;
@@ -129,6 +135,11 @@ struct PD_INFER_DECL AnalysisConfig {
   void SetOptimCacheDir(const std::string& opt_cache_dir) {
     opt_cache_dir_ = opt_cache_dir;
   }
+
+  const std::string& opt_cache_dir() const {
+    return opt_cache_dir_;
+  }
+
   ///
   /// \brief Get the model directory path.
   ///
@@ -690,6 +701,8 @@ struct PD_INFER_DECL AnalysisConfig {
   // So we release the memory when the predictor is set up.
   mutable bool is_valid_{true};
   std::string opt_cache_dir_;
+
+  friend paddle_infer::tensorrt::Predictor;
 };
 
 }  // namespace paddle
