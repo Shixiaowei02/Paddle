@@ -385,6 +385,15 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
           &block_desc_temp, *scope,
           std::vector<std::string>(input_names.begin(), input_names.end()),
           param_set, output_mapping, trt_engine);
+#if 1
+  std::vector<std::string> params__;
+  std::copy(param_set.begin(), param_set.end(), std::back_inserter(params__));
+  scope->EraseVars(params__);
+  for (int dev_id = 0; dev_id < paddle::platform::GetCUDADeviceCount();
+        ++dev_id) {
+      memory::Release(platform::CUDAPlace(dev_id));
+  }
+#endif
 
   if (use_static_engine) {
     nvinfer1::IHostMemory *serialized_engine_data = trt_engine->Serialize();

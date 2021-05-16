@@ -431,25 +431,44 @@ struct OpKernelRegistrarFunctorEx<PlaceType, false, I,
 
 #if !defined(PADDLE_WITH_CUDA) && !defined(PADDLE_WITH_HIP)
 #define USE_OP_KERNEL(op_type) USE_OP_DEVICE_KERNEL(op_type, CPU)
+#define USE_OP_KERNEL__(op_type) USE_OP_DEVICE_KERNEL__(op_type, CPU)
 #else
 #define USE_OP_KERNEL(op_type)        \
   USE_OP_DEVICE_KERNEL(op_type, CPU); \
   USE_OP_DEVICE_KERNEL(op_type, CUDA)
+
+#define USE_OP_KERNEL__(op_type)        \
+  USE_OP_DEVICE_KERNEL__(op_type, CPU); \
+  USE_OP_DEVICE_KERNEL__(op_type, CUDA)
 #endif
 
 #define USE_NO_KERNEL_OP(op_type) USE_OP_ITSELF(op_type);
+
+#define USE_NO_KERNEL_OP__(op_type) USE_OP_ITSELF__(op_type);
 
 #define USE_CPU_ONLY_OP(op_type) \
   USE_OP_ITSELF(op_type);        \
   USE_OP_DEVICE_KERNEL(op_type, CPU);
 
+#define USE_CPU_ONLY_OP__(op_type) \
+  USE_OP_ITSELF__(op_type);        \
+  USE_OP_DEVICE_KERNEL__(op_type, CPU);
+
 #define USE_CUDA_ONLY_OP(op_type) \
   USE_OP_ITSELF(op_type);         \
   USE_OP_DEVICE_KERNEL(op_type, CUDA)
 
+#define USE_CUDA_ONLY_OP__(op_type) \
+  USE_OP_ITSELF__(op_type);         \
+  USE_OP_DEVICE_KERNEL__(op_type, CUDA)
+
 #define USE_OP(op_type)   \
   USE_OP_ITSELF(op_type); \
   USE_OP_KERNEL(op_type)
+
+#define USE_OP__(op_type)   \
+  USE_OP_ITSELF__(op_type); \
+  USE_OP_KERNEL__(op_type)
 // clang-format on
 
 }  // namespace framework

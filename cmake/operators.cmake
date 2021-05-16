@@ -356,7 +356,6 @@ function(op_library TARGET)
     endif()
 endfunction()
 
-
 function(register_operators)
     set(options "")
     set(oneValueArgs "")
