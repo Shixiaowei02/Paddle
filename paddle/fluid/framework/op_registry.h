@@ -322,10 +322,13 @@ struct OpKernelRegistrarFunctorEx<PlaceType, false, I,
 #define REGISTER_OP_KERNEL(op_type, library_type, place_class, ...)
 
 #define REGISTER_OP_KERNEL__(op_type, library_type, place_class, ...)   \
-  REGISTER_OP_KERNEL_WITH_CUSTOM_TYPE(                                \
+  REGISTER_OP_KERNEL_WITH_CUSTOM_TYPE__(                                \
       op_type, library_type, place_class, DEFAULT_TYPE,               \
       ::paddle::framework::OpKernelType::kDefaultCustomizedTypeValue, \
       __VA_ARGS__)
+
+#define REGISTER_OP_CUDA_KERNEL__(op_type, ...) \
+  REGISTER_OP_KERNEL__(op_type, CUDA, ::paddle::platform::CUDAPlace, __VA_ARGS__)
 
 #define REGISTER_OP_CUDA_KERNEL(op_type, ...) \
   REGISTER_OP_KERNEL(op_type, CUDA, ::paddle::platform::CUDAPlace, __VA_ARGS__)
