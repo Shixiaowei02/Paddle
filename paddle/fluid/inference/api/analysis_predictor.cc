@@ -1179,7 +1179,7 @@ USE_TRT_CONVERTER(shuffle_channel);
 USE_TRT_CONVERTER(swish);
 USE_TRT_CONVERTER(group_norm);
 USE_TRT_CONVERTER(instance_norm);
-USE_TRT_CONVERTER(layer_norm);
+// USE_TRT_CONVERTER(layer_norm);
 USE_TRT_CONVERTER(gelu);
 USE_TRT_CONVERTER(multihead_matmul);
 USE_TRT_CONVERTER(fused_embedding_eltwise_layernorm);
@@ -1189,7 +1189,7 @@ USE_TRT_CONVERTER(scale);
 USE_TRT_CONVERTER(stack);
 USE_TRT_CONVERTER(clip);
 USE_TRT_CONVERTER(gather);
-USE_TRT_CONVERTER(anchor_generator);
+// USE_TRT_CONVERTER(anchor_generator);
 USE_TRT_CONVERTER(yolo_box);
 USE_TRT_CONVERTER(roi_align);
 USE_TRT_CONVERTER(affine_channel);
@@ -1252,7 +1252,9 @@ int GetNumBytesOfDataType(DataType dtype) {
   }
 }
 
-std::string GetVersion() { return paddle::get_version(); }
+std::string GetVersion() {
+  return paddle::get_version();
+}
 
 std::string UpdateDllFlag(const char *name, const char *value) {
   return paddle::UpdateDllFlag(name, value);

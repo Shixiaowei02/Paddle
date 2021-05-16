@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "paddle/fluid/inference/api/paddle_tensorrt_predictor.h"
+#include "paddle/fluid/imperative/layer.h"
 #include <glog/logging.h>
 #include <algorithm>
 #include <fstream>
@@ -1105,6 +1106,7 @@ std::string TensorRTPredictor::GetSerializedProgram() const {
 // Add SaveOptimModel
 void TensorRTPredictor::SaveOptimModel(const std::string &dir) {
   // save model
+  paddle::imperative::VarBase(true, "");
   std::string model_name = dir + "/model";
   std::ofstream outfile;
   outfile.open(model_name, std::ios::out | std::ios::binary);
