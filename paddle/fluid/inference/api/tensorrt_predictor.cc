@@ -142,7 +142,7 @@ bool PaddleTensorToLoDTensor(const PaddleTensor &pt, framework::LoDTensor *t,
   return true;
 }
 
-bool AnalysisPredictor::Init(
+bool TensorRTPredictor::Init(
     const std::shared_ptr<framework::Scope> &parent_scope,
     const std::shared_ptr<framework::ProgramDesc> &program) {
   VLOG(3) << "Predictor::init()";
@@ -180,7 +180,7 @@ bool AnalysisPredictor::Init(
   return true;
 }
 
-bool AnalysisPredictor::PrepareScope(
+bool TensorRTPredictor::PrepareScope(
     const std::shared_ptr<framework::Scope> &parent_scope) {
   if (parent_scope) {
     PADDLE_ENFORCE_NOT_NULL(
@@ -198,7 +198,7 @@ bool AnalysisPredictor::PrepareScope(
   sub_scope_ = &scope_->NewScope();
   return true;
 }
-bool AnalysisPredictor::PrepareProgram(
+bool TensorRTPredictor::PrepareProgram(
     const std::shared_ptr<framework::ProgramDesc> &program) {
   if (!program) {
     if (!LoadProgramDesc()) return false;
@@ -225,7 +225,7 @@ bool AnalysisPredictor::PrepareProgram(
 
   return true;
 }
-bool AnalysisPredictor::CreateExecutor() {
+bool TensorRTPredictor::CreateExecutor() {
   if (config_.use_gpu()) {
     PADDLE_ENFORCE_EQ(config_.use_xpu(), false,
                       platform::errors::InvalidArgument(
@@ -270,7 +270,7 @@ bool AnalysisPredictor::CreateExecutor() {
   executor_.reset(new paddle::framework::NaiveExecutor(place_));
   return true;
 }
-bool AnalysisPredictor::PrepareExecutor() {
+bool TensorRTPredictor::PrepareExecutor() {
   executor_->Prepare(sub_scope_, *inference_program_, 0,
                      config_.use_feed_fetch_ops_);
 
@@ -281,7 +281,7 @@ bool AnalysisPredictor::PrepareExecutor() {
   return true;
 }
 
-void AnalysisPredictor::MkldnnPreSet(const std::vector<PaddleTensor> &inputs) {
+void TensorRTPredictor::MkldnnPreSet(const std::vector<PaddleTensor> &inputs) {
 #ifdef PADDLE_WITH_MKLDNN
   std::vector<std::vector<int>> inputs_shape;
   for (size_t i = 0; i < inputs.size(); ++i) {
@@ -291,10 +291,10 @@ void AnalysisPredictor::MkldnnPreSet(const std::vector<PaddleTensor> &inputs) {
 #endif
 }
 
-void AnalysisPredictor::MkldnnPreSet(
+void TensorRTPredictor::MkldnnPreSet(
     const std::vector<std::vector<int>> &inputs_shape) {
 #ifdef PADDLE_WITH_MKLDNN
-  VLOG(2) << "AnalysisPredictor::ZeroCopyRun get_cur_mkldnn_session_id="
+  VLOG(2) << "TensorRTPredictor::ZeroCopyRun get_cur_mkldnn_session_id="
           << platform::MKLDNNDeviceContext::tls().get_cur_mkldnn_session_id();
   // In cache clearing mode.
   if (config_.mkldnn_cache_capacity_ > 0) {
@@ -317,7 +317,7 @@ void AnalysisPredictor::MkldnnPreSet(
 #endif
 }
 
-void AnalysisPredictor::MkldnnPostReset() {
+void TensorRTPredictor::MkldnnPostReset() {
 #ifdef PADDLE_WITH_MKLDNN
   // In cache clearing mode.
   if (config_.mkldnn_cache_capacity_ > 0) {
@@ -337,7 +337,7 @@ void AnalysisPredictor::MkldnnPostReset() {
 #endif
 }
 
-bool AnalysisPredictor::Run(const std::vector<PaddleTensor> &inputs,
+bool TensorRTPredictor::Run(const std::vector<PaddleTensor> &inputs,
                             std::vector<PaddleTensor> *output_data,
                             int batch_size) {
   paddle::platform::SetNumThreads(config_.cpu_math_library_num_threads());
@@ -393,7 +393,7 @@ bool AnalysisPredictor::Run(const std::vector<PaddleTensor> &inputs,
   return true;
 }
 
-bool AnalysisPredictor::SetFeed(const std::vector<PaddleTensor> &inputs,
+bool TensorRTPredictor::SetFeed(const std::vector<PaddleTensor> &inputs,
                                 framework::Scope *scope) {
   VLOG(3) << "Predictor::set_feed";
   if (inputs.size() != feeds_.size()) {
@@ -427,7 +427,7 @@ bool AnalysisPredictor::SetFeed(const std::vector<PaddleTensor> &inputs,
 }
 
 template <typename T>
-void AnalysisPredictor::GetFetchOne(const framework::LoDTensor &fetch,
+void TensorRTPredictor::GetFetchOne(const framework::LoDTensor &fetch,
                                     PaddleTensor *output) {
   // set shape.
   auto shape = framework::vectorize(fetch.dims());
@@ -446,7 +446,7 @@ void AnalysisPredictor::GetFetchOne(const framework::LoDTensor &fetch,
   }
 }
 
-bool AnalysisPredictor::GetFetch(std::vector<PaddleTensor> *outputs,
+bool TensorRTPredictor::GetFetch(std::vector<PaddleTensor> *outputs,
                                  framework::Scope *scope) {
   VLOG(3) << "Predictor::get_fetch";
   outputs->resize(fetches_.size());
@@ -479,7 +479,7 @@ bool AnalysisPredictor::GetFetch(std::vector<PaddleTensor> *outputs,
   return true;
 }
 
-void AnalysisPredictor::PrepareArgument() {
+void TensorRTPredictor::PrepareArgument() {
   argument_.SetUseGPU(config_.use_gpu());
   argument_.SetUseFcPadding(config_.use_fc_padding());
   argument_.SetGPUDeviceId(config_.gpu_device_id());
@@ -577,7 +577,7 @@ void AnalysisPredictor::PrepareArgument() {
 }
 
 // NOTE All the members in AnalysisConfig should be copied to Argument.
-void AnalysisPredictor::OptimizeInferenceProgram() {
+void TensorRTPredictor::OptimizeInferenceProgram() {
   PrepareArgument();
   Analyzer().Run(&argument_);
 
@@ -688,10 +688,10 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
     }
   }
 
-  std::unique_ptr<PaddlePredictor> predictor(new AnalysisPredictor(config));
+  std::unique_ptr<PaddlePredictor> predictor(new TensorRTPredictor(config));
   // Each config can only be used for one predictor.
   config.SetInValid();
-  auto predictor_p = dynamic_cast<AnalysisPredictor *>(predictor.get());
+  auto predictor_p = dynamic_cast<TensorRTPredictor *>(predictor.get());
 
   if (!predictor_p->Init(nullptr)) {
     return nullptr;
@@ -704,10 +704,10 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
   return predictor;
 }
 
-bool AnalysisPredictor::MkldnnQuantize() {
+bool TensorRTPredictor::MkldnnQuantize() {
 #if PADDLE_WITH_MKLDNN
   if (!mkldnn_quantizer_)
-    mkldnn_quantizer_ = new AnalysisPredictor::MkldnnQuantizer(
+    mkldnn_quantizer_ = new TensorRTPredictor::MkldnnQuantizer(
         *this, config_.mkldnn_quantizer_config());
   return mkldnn_quantizer_->Quantize();
 #else
@@ -716,7 +716,7 @@ bool AnalysisPredictor::MkldnnQuantize() {
 #endif
 }
 
-void AnalysisPredictor::PrepareFeedFetch() {
+void TensorRTPredictor::PrepareFeedFetch() {
   PADDLE_ENFORCE_NOT_NULL(sub_scope_,
                           platform::errors::InvalidArgument(
                               "The sub_scope should not be nullptr."));
@@ -741,7 +741,7 @@ void AnalysisPredictor::PrepareFeedFetch() {
   }
 }
 
-void AnalysisPredictor::CreateFeedFetchVar(framework::Scope *scope) {
+void TensorRTPredictor::CreateFeedFetchVar(framework::Scope *scope) {
   PADDLE_ENFORCE_NOT_NULL(scope, platform::errors::InvalidArgument(
                                      "The scope should not be nullptr."));
   auto *var = scope->Var("feed");
@@ -750,7 +750,7 @@ void AnalysisPredictor::CreateFeedFetchVar(framework::Scope *scope) {
   var->GetMutable<framework::FetchList>();
 }
 
-std::vector<std::string> AnalysisPredictor::GetInputNames() {
+std::vector<std::string> TensorRTPredictor::GetInputNames() {
   std::vector<std::string> input_names;
   for (auto &item : idx2feeds_) {
     input_names.push_back(item.second);
@@ -759,7 +759,7 @@ std::vector<std::string> AnalysisPredictor::GetInputNames() {
 }
 
 std::map<std::string, std::vector<int64_t>>
-AnalysisPredictor::GetInputTensorShape() {
+TensorRTPredictor::GetInputTensorShape() {
   std::map<std::string, std::vector<int64_t>> input_shapes;
   std::vector<std::string> names = GetInputNames();
   for (std::string name : names) {
@@ -771,7 +771,7 @@ AnalysisPredictor::GetInputTensorShape() {
   return input_shapes;
 }
 
-std::vector<std::string> AnalysisPredictor::GetOutputNames() {
+std::vector<std::string> TensorRTPredictor::GetOutputNames() {
   std::vector<std::string> output_names;
   for (auto &item : idx2fetches_) {
     output_names.push_back(item.second);
@@ -779,7 +779,7 @@ std::vector<std::string> AnalysisPredictor::GetOutputNames() {
   return output_names;
 }
 
-std::unique_ptr<ZeroCopyTensor> AnalysisPredictor::GetInputTensor(
+std::unique_ptr<ZeroCopyTensor> TensorRTPredictor::GetInputTensor(
     const std::string &name) {
   PADDLE_ENFORCE_NOT_NULL(
       executor_->scope()->FindVar(name),
@@ -811,7 +811,7 @@ std::unique_ptr<ZeroCopyTensor> AnalysisPredictor::GetInputTensor(
   return res;
 }
 
-std::unique_ptr<ZeroCopyTensor> AnalysisPredictor::GetOutputTensor(
+std::unique_ptr<ZeroCopyTensor> TensorRTPredictor::GetOutputTensor(
     const std::string &name) {
   PADDLE_ENFORCE_NOT_NULL(
       executor_->scope()->FindVar(name),
@@ -843,7 +843,7 @@ std::unique_ptr<ZeroCopyTensor> AnalysisPredictor::GetOutputTensor(
   return res;
 }
 
-bool AnalysisPredictor::ZeroCopyRun() {
+bool TensorRTPredictor::ZeroCopyRun() {
   paddle::platform::SetNumThreads(config_.cpu_math_library_num_threads());
 #ifdef PADDLE_WITH_MKLDNN
   if (config_.use_mkldnn_) {
@@ -877,7 +877,7 @@ bool AnalysisPredictor::ZeroCopyRun() {
   return true;
 }
 
-bool AnalysisPredictor::LoadProgramDesc() {
+bool TensorRTPredictor::LoadProgramDesc() {
   // Initialize the inference program
   std::string filename;
   if (!config_.model_dir().empty()) {
@@ -924,7 +924,7 @@ bool AnalysisPredictor::LoadProgramDesc() {
   return true;
 }
 
-bool AnalysisPredictor::LoadParameters() {
+bool TensorRTPredictor::LoadParameters() {
   PADDLE_ENFORCE_NOT_NULL(inference_program_.get(),
                           platform::errors::PreconditionNotMet(
                               "The inference program should be loaded first."));
@@ -982,12 +982,12 @@ bool AnalysisPredictor::LoadParameters() {
   return true;
 }
 
-uint64_t AnalysisPredictor::TryShrinkMemory() {
+uint64_t TensorRTPredictor::TryShrinkMemory() {
   ClearIntermediateTensor();
   return paddle::memory::Release(place_);
 }
 
-void AnalysisPredictor::ClearIntermediateTensor() {
+void TensorRTPredictor::ClearIntermediateTensor() {
   PADDLE_ENFORCE_NOT_NULL(inference_program_.get(),
                           platform::errors::PreconditionNotMet(
                               "The inference program should be loaded first."));
@@ -1007,7 +1007,7 @@ void AnalysisPredictor::ClearIntermediateTensor() {
 }
 
 #if PADDLE_WITH_TENSORRT
-bool AnalysisPredictor::SaveTrtCalibToDisk() {
+bool TensorRTPredictor::SaveTrtCalibToDisk() {
   PADDLE_ENFORCE_EQ(config_.tensorrt_engine_enabled(), true,
                     platform::errors::PreconditionNotMet(
                         "This func can be invoked only in trt mode"));
@@ -1060,7 +1060,7 @@ bool AnalysisPredictor::SaveTrtCalibToDisk() {
 }
 #endif
 
-AnalysisPredictor::~AnalysisPredictor() {
+TensorRTPredictor::~TensorRTPredictor() {
 #if PADDLE_WITH_TENSORRT
   if (config_.tensorrt_engine_enabled() &&
       config_.tensorrt_precision_mode_ == AnalysisConfig::Precision::kInt8 &&
@@ -1086,19 +1086,19 @@ AnalysisPredictor::~AnalysisPredictor() {
   memory::Release(place_);
 }
 
-std::unique_ptr<PaddlePredictor> AnalysisPredictor::Clone() {
+std::unique_ptr<PaddlePredictor> TensorRTPredictor::Clone() {
   std::lock_guard<std::mutex> lk(clone_mutex_);
-  auto *x = new AnalysisPredictor(config_);
+  auto *x = new TensorRTPredictor(config_);
   x->Init(scope_, inference_program_);
   return std::unique_ptr<PaddlePredictor>(x);
 }
 
-std::string AnalysisPredictor::GetSerializedProgram() const {
+std::string TensorRTPredictor::GetSerializedProgram() const {
   return inference_program_->Proto()->SerializeAsString();
 }
 
 // Add SaveOptimModel
-void AnalysisPredictor::SaveOptimModel(const std::string &dir) {
+void TensorRTPredictor::SaveOptimModel(const std::string &dir) {
   // save model
   std::string model_name = dir + "/model";
   std::ofstream outfile;

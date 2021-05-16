@@ -34,7 +34,7 @@
 ///
 /// \file analysis_predictor.h
 ///
-/// \brief Compared to NativePredictor, AnalysisPredictor is a high-performance
+/// \brief Compared to NativePredictor, TensorRTPredictor is a high-performance
 /// predictor that includes many optimizations
 ///
 /// \author paddle-infer@baidu.com
@@ -50,7 +50,7 @@ using framework::proto::ProgramDesc;
 using framework::NaiveExecutor;
 
 ///
-/// \class AnalysisPredictor
+/// \class TensorRTPredictor
 ///
 /// \brief The analysis predictor is based on the original native predictor with
 /// IR and Analysis support. It will optimize IR and Parameters in the runtime.
@@ -79,20 +79,20 @@ using framework::NaiveExecutor;
 ///   predictor->ZeroCopyRun();
 /// \endcode
 ///
-class AnalysisPredictor : public PaddlePredictor {
+class TensorRTPredictor : public PaddlePredictor {
  public:
   ///
   /// \brief Construct a new Analysis Predictor object
   ///
   /// \param[in] AnalysisConfig config
   ///
-  explicit AnalysisPredictor(const AnalysisConfig &config) : config_(config) {
+  explicit TensorRTPredictor(const AnalysisConfig &config) : config_(config) {
     predictor_id_ = inference::GetUniqueId();
   }
   ///
   /// \brief Destroy the Analysis Predictor object
   ///
-  ~AnalysisPredictor();
+  ~TensorRTPredictor();
 
   ///
   /// \brief Initialize predictor
@@ -322,8 +322,8 @@ class AnalysisPredictor : public PaddlePredictor {
   ///
   /// \brief PreSet for Mkldnn multi-thread and dynamic shape input.
   ///
-  /// Used in AnalysisPredictor::Run(), do not support
-  /// AnalysisPredictor::ZeroCopyRun() now.
+  /// Used in TensorRTPredictor::Run(), do not support
+  /// TensorRTPredictor::ZeroCopyRun() now.
   ///
   /// \param[in] inputs tensors
   ///
@@ -332,8 +332,8 @@ class AnalysisPredictor : public PaddlePredictor {
   ///
   /// \brief PreSet for Mkldnn multi-thread and dynamic shape input.
   ///
-  /// Used in AnalysisPredictor::Run(), do not support
-  /// AnalysisPredictor::ZeroCopyRun() now.
+  /// Used in TensorRTPredictor::Run(), do not support
+  /// TensorRTPredictor::ZeroCopyRun() now.
   ///
   /// \param[in] inputs tensor shape
   ///
@@ -342,8 +342,8 @@ class AnalysisPredictor : public PaddlePredictor {
   ///
   /// \brief PostReset for Mkldnn multi-thread and dynamic shape input.
   ///
-  /// Used in AnalysisPredictor::Run(), do not support
-  /// AnalysisPredictor::ZeroCopyRun() now.
+  /// Used in TensorRTPredictor::Run(), do not support
+  /// TensorRTPredictor::ZeroCopyRun() now.
   ///
   void MkldnnPostReset();
 
@@ -368,9 +368,9 @@ class AnalysisPredictor : public PaddlePredictor {
 // Some more detailed tests, they are made the friends of the predictor, so that
 // the all the details can be tested.
 #if PADDLE_WITH_TESTING
-  FRIEND_TEST(AnalysisPredictor, analysis_off);
-  FRIEND_TEST(AnalysisPredictor, analysis_on);
-  FRIEND_TEST(AnalysisPredictor, with_gpu);
+  FRIEND_TEST(TensorRTPredictor, analysis_off);
+  FRIEND_TEST(TensorRTPredictor, analysis_on);
+  FRIEND_TEST(TensorRTPredictor, with_gpu);
 #endif
 
  private:
