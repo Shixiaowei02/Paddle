@@ -64,9 +64,9 @@ class LoadOpProtoMaker : public framework::OpProtoAndCheckerMaker {
 }  // namespace paddle
 namespace ops = paddle::operators;
 
-REGISTER_OPERATOR(load, ops::LoadOp, ops::LoadOpProtoMaker);
+REGISTER_OPERATOR__(load, ops::LoadOp, ops::LoadOpProtoMaker);
 
-REGISTER_OP_CPU_KERNEL(
+REGISTER_OP_CPU_KERNEL__(
     load, ops::LoadOpKernel<paddle::platform::CPUDeviceContext, float>,
     ops::LoadOpKernel<paddle::platform::CPUDeviceContext, double>,
     ops::LoadOpKernel<paddle::platform::CPUDeviceContext, int>,

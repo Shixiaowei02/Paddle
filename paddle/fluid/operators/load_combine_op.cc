@@ -80,10 +80,10 @@ that were saved using the SaveCombine operator.
 
 namespace ops = paddle::operators;
 
-REGISTER_OPERATOR(load_combine, ops::LoadCombineOp,
+REGISTER_OPERATOR__(load_combine, ops::LoadCombineOp,
                   ops::LoadCombineOpProtoMaker);
 
-REGISTER_OP_CPU_KERNEL(
+REGISTER_OP_CPU_KERNEL__(
     load_combine,
     ops::LoadCombineOpKernel<paddle::platform::CPUDeviceContext, float>,
     ops::LoadCombineOpKernel<paddle::platform::CPUDeviceContext, double>,

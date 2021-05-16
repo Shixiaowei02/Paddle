@@ -275,24 +275,6 @@ struct OpKernelRegistrarFunctorEx<PlaceType, false, I,
     VarTypeInference
     InferShapeBase
 */
-
-/*
-#define REGISTER_OPERATOR(op_type, op_class, ...)                        \
-  STATIC_ASSERT_GLOBAL_NAMESPACE(                                        \
-      __reg_op__##op_type,                                               \
-      "REGISTER_OPERATOR must be called in global namespace");           \
-  static ::paddle::framework::OperatorRegistrar<op_class, ##__VA_ARGS__> \
-      __op_registrar_##op_type##__(#op_type);                            \
-  int TouchOpRegistrar_##op_type() {                                     \
-    __op_registrar_##op_type##__.Touch();                                \
-    return 0;                                                            \
-  }
-*/
-
-
-
-#define REGISTER_OPERATOR(op_type, op_class, ...) 
-
 #define REGISTER_OPERATOR__(op_type, op_class, ...)                        \
   STATIC_ASSERT_GLOBAL_NAMESPACE(                                        \
       __reg_op__##op_type,                                               \
@@ -304,16 +286,23 @@ struct OpKernelRegistrarFunctorEx<PlaceType, false, I,
     return 0;                                                            \
   }
 
+#define REGISTER_OPERATOR(op_type, op_class, ...)
 
-#define REGISTER_OP_WITHOUT_GRADIENT(op_type, op_class, op_maker_class) \
+#define REGISTER_OP_WITHOUT_GRADIENT__(op_type, op_class, op_maker_class) \
   REGISTER_OPERATOR(op_type, op_class, op_maker_class, \
         paddle::framework::EmptyGradOpMaker<paddle::framework::OpDesc>,   \
         paddle::framework::EmptyGradOpMaker<paddle::imperative::OpBase>)
+
+#define REGISTER_OP_WITHOUT_GRADIENT(op_type, op_class, op_maker_class)
 
 /**
  * Macro to register OperatorKernel.
  */
 #define REGISTER_OP_KERNEL_WITH_CUSTOM_TYPE(op_type, library_type,             \
+                                            place_class, customized_name,      \
+                                            customized_type_value, ...)
+
+#define REGISTER_OP_KERNEL_WITH_CUSTOM_TYPE__(op_type, library_type,             \
                                             place_class, customized_name,      \
                                             customized_type_value, ...)        \
   STATIC_ASSERT_GLOBAL_NAMESPACE(                                              \
@@ -330,28 +319,51 @@ struct OpKernelRegistrarFunctorEx<PlaceType, false, I,
     return 0;                                                                  \
   }
 
-#define REGISTER_OP_KERNEL(op_type, library_type, place_class, ...)  /* \
+#define REGISTER_OP_KERNEL(op_type, library_type, place_class, ...)
+
+#define REGISTER_OP_KERNEL__(op_type, library_type, place_class, ...)   \
   REGISTER_OP_KERNEL_WITH_CUSTOM_TYPE(                                \
       op_type, library_type, place_class, DEFAULT_TYPE,               \
       ::paddle::framework::OpKernelType::kDefaultCustomizedTypeValue, \
-      __VA_ARGS__) */
+      __VA_ARGS__)
 
-#define REGISTER_OP_CUDA_KERNEL(op_type, ...) /* \
-  REGISTER_OP_KERNEL(op_type, CUDA, ::paddle::platform::CUDAPlace, __VA_ARGS__) */
+#define REGISTER_OP_CUDA_KERNEL(op_type, ...) \
+  REGISTER_OP_KERNEL(op_type, CUDA, ::paddle::platform::CUDAPlace, __VA_ARGS__)
 
-#define REGISTER_OP_CPU_KERNEL(op_type, ...) /* \
-  REGISTER_OP_KERNEL(op_type, CPU, ::paddle::platform::CPUPlace, __VA_ARGS__) */
+#define REGISTER_OP_CPU_KERNEL__(op_type, ...) \
+  REGISTER_OP_KERNEL__(op_type, CPU, ::paddle::platform::CPUPlace, __VA_ARGS__)
 
-#define REGISTER_OP_XPU_KERNEL(op_type, ...) /* \
-  REGISTER_OP_KERNEL(op_type, XPU, ::paddle::platform::XPUPlace, __VA_ARGS__) */
+#define REGISTER_OP_CPU_KERNEL(op_type, ...) \
+  REGISTER_OP_KERNEL(op_type, CPU, ::paddle::platform::CPUPlace, __VA_ARGS__)
 
-#define REGISTER_OP_NPU_KERNEL(op_type, ...) /* \
-  REGISTER_OP_KERNEL(op_type, NPU, ::paddle::platform::NPUPlace, __VA_ARGS__) */
+#define REGISTER_OP_XPU_KERNEL(op_type, ...) \
+  REGISTER_OP_KERNEL(op_type, XPU, ::paddle::platform::XPUPlace, __VA_ARGS__)
 
-#define REGISTER_OP_KERNEL_EX(op_type, library_type, place_class,   \
+#define REGISTER_OP_NPU_KERNEL(op_type, ...) \
+  REGISTER_OP_KERNEL(op_type, NPU, ::paddle::platform::NPUPlace, __VA_ARGS__)
+
+#define REGISTER_OP_KERNEL_EX(op_type, library_type, place_class,  \
                               customized_name,                     \
                               customized_type_value,               \
-                              ...)                           
+                              ...)                                 
+
+#define REGISTER_OP_KERNEL_EX__(op_type, library_type, place_class,  \
+                              customized_name,                     \
+                              customized_type_value,               \
+                              ...)                                 \
+  STATIC_ASSERT_GLOBAL_NAMESPACE(                                  \
+      __reg_op_kernel_##op_type##_##library_type##_##customized_name##__, \
+                                 "REGISTER_OP_KERNEL_EX must be called in "  \
+                                 "global namespace");  \
+  static ::paddle::framework::OpKernelRegistrarEx<place_class,  \
+                                                  __VA_ARGS__>  \
+      __op_kernel_registrar_##op_type##_##library_type##_##customized_name##__(\
+          #op_type, #library_type, customized_type_value);  \
+  int TouchOpKernelRegistrar_##op_type##_##library_type##_##customized_name() {\
+    __op_kernel_registrar_##op_type##_##library_type##_##customized_name##__   \
+        .Touch();                                                              \
+    return 0;                                                                  \
+  }
 
 #define REGISTER_OP_CUDA_KERNEL_FUNCTOR(op_type, ...)                 \
   REGISTER_OP_KERNEL_EX(                                              \
@@ -382,28 +394,59 @@ struct OpKernelRegistrarFunctorEx<PlaceType, false, I,
  * we will use and tell the compiler to
  * link them into target.
  */
-#define USE_OP_ITSELF(op_type)                             
+#define USE_OP_ITSELF(op_type)                            
+
+#define USE_OP_ITSELF__(op_type)                             \
+  STATIC_ASSERT_GLOBAL_NAMESPACE(                          \
+      __use_op_itself_##op_type,                           \
+      "USE_OP_ITSELF must be called in global namespace"); \
+  extern int TouchOpRegistrar_##op_type();                 \
+  UNUSED static int use_op_itself_##op_type##_ = TouchOpRegistrar_##op_type()
+
+#define USE_OP_DEVICE_KERNEL_WITH_CUSTOM_TYPE__(op_type,                     \
+                                              LIBRARY_TYPE,                \
+                                              customized_name)             \
+  STATIC_ASSERT_GLOBAL_NAMESPACE(                                          \
+      __use_op_kernel_##op_type##_##LIBRARY_TYPE##_##customized_name##__,  \
+      "USE_OP_DEVICE_KERNEL must be in global namespace");                 \
+  extern int                                                               \
+      TouchOpKernelRegistrar_##op_type##_##LIBRARY_TYPE##_##customized_name(); \
+  UNUSED static int use_op_kernel_##op_type##_##LIBRARY_TYPE##_##customized_name##_ = /* NOLINT */ \
+      TouchOpKernelRegistrar_##op_type##_##LIBRARY_TYPE##_##customized_name()
 
 #define USE_OP_DEVICE_KERNEL_WITH_CUSTOM_TYPE(op_type,                     \
                                               LIBRARY_TYPE,                \
-                                              customized_name)             
-#define USE_OP_DEVICE_KERNEL(op_type, LIBRARY_TYPE) 
+                                              customized_name)            
+
+#define USE_OP_DEVICE_KERNEL__(op_type, LIBRARY_TYPE) \
+  USE_OP_DEVICE_KERNEL_WITH_CUSTOM_TYPE(op_type, LIBRARY_TYPE, DEFAULT_TYPE)
+
+#define USE_OP_DEVICE_KERNEL(op_type, LIBRARY_TYPE)
 
 // TODO(fengjiayi): The following macros
 // seems ugly, do we have better method?
 
 #if !defined(PADDLE_WITH_CUDA) && !defined(PADDLE_WITH_HIP)
-#define USE_OP_KERNEL(op_type) 
+#define USE_OP_KERNEL(op_type) USE_OP_DEVICE_KERNEL(op_type, CPU)
 #else
-#define USE_OP_KERNEL(op_type) 
+#define USE_OP_KERNEL(op_type)        \
+  USE_OP_DEVICE_KERNEL(op_type, CPU); \
+  USE_OP_DEVICE_KERNEL(op_type, CUDA)
 #endif
 
-#define USE_NO_KERNEL_OP(op_type)
+#define USE_NO_KERNEL_OP(op_type) USE_OP_ITSELF(op_type);
 
-#define USE_CPU_ONLY_OP(op_type)
-#define USE_CUDA_ONLY_OP(op_type)
+#define USE_CPU_ONLY_OP(op_type) \
+  USE_OP_ITSELF(op_type);        \
+  USE_OP_DEVICE_KERNEL(op_type, CPU);
 
-#define USE_OP(op_type) 
+#define USE_CUDA_ONLY_OP(op_type) \
+  USE_OP_ITSELF(op_type);         \
+  USE_OP_DEVICE_KERNEL(op_type, CUDA)
+
+#define USE_OP(op_type)   \
+  USE_OP_ITSELF(op_type); \
+  USE_OP_KERNEL(op_type)
 // clang-format on
 
 }  // namespace framework

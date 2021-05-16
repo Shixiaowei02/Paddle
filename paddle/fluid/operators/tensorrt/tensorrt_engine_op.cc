@@ -51,7 +51,7 @@ class TensorRTEngineInferVarType : public framework::VarTypeInference {
 
 namespace ops = paddle::operators;
 
-REGISTER_OPERATOR(tensorrt_engine, ops::TensorRTEngineOp,
+REGISTER_OPERATOR__(tensorrt_engine, ops::TensorRTEngineOp,
                   ops::TensorRTEngineOpMaker);
 
 #endif  // PADDLE_WITH_CUDA
