@@ -8,7 +8,7 @@ if (WITH_GPU AND TENSORRT_FOUND)
           CACHE INTERNAL "")
 
   set(pass_file ${PADDLE_BINARY_DIR}/paddle/fluid/inference/api/paddle_inference_pass.h.tmp)
-  file(APPEND ${pass_file} "USE_PASS(tensorrt_subgraph_pass);\n")
+  #file(APPEND ${pass_file} "USE_PASS(tensorrt_subgraph_pass);\n")
   set(INFER_IR_PASSES ${INFER_IR_PASSES} tensorrt_subgraph_pass CACHE INTERNAL "")
 endif()
 

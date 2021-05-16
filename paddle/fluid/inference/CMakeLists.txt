@@ -47,7 +47,7 @@ add_subdirectory(trt_pred)
 # All static libs in inference/api
 set(STATIC_INFERENCE_API paddle_inference_api analysis_predictor
      zero_copy_tensor reset_tensor_array
-        analysis_config paddle_pass_builder activation_functions ${mkldnn_quantizer_cfg})
+        analysis_config paddle_pass_builder ${mkldnn_quantizer_cfg})
 #TODO(wilber, T8T9): Do we still need to support windows gpu static library?
 if(WIN32 AND WITH_GPU)
   cc_library(paddle_inference DEPS ${fluid_modules} ${STATIC_INFERENCE_API})

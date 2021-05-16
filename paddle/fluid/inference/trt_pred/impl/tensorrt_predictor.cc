@@ -185,7 +185,7 @@ bool PrepareProgram(
     // If config_.ir_optim() is False, parameters is loaded in LoadParameters(),
     // still need to create other persistable variables.
     // So in both case, create persistable variables at first.
-    executor_->CreateVariables(*inference_program_, 0, true, sub_scope_);
+    //executor_->CreateVariables(*inference_program_, 0, true, sub_scope_);
 
     // if enable_ir_optim_ is false,
     // the analysis pass(op fuse, graph analysis, trt subgraph, mkldnn etc) will
@@ -197,7 +197,7 @@ bool PrepareProgram(
     inference_program_ = program;
   }
 
-  executor_->CreateVariables(*inference_program_, 0, false, sub_scope_);
+  //executor_->CreateVariables(*inference_program_, 0, false, sub_scope_);
   return true;
 }
 
@@ -210,13 +210,13 @@ bool CreateExecutor() {
   } else {
     LOG(FATAL);
   }
-  executor_.reset(new paddle::framework::NaiveExecutor(place_));
+  //executor_.reset(new paddle::framework::NaiveExecutor(place_));
   return true;
 }
 
 bool PrepareExecutor() {
-  executor_->Prepare(sub_scope_, *inference_program_, 0,
-                     config_.use_feed_fetch_ops_);
+  //executor_->Prepare(sub_scope_, *inference_program_, 0,
+  //                   config_.use_feed_fetch_ops_);
 
   PADDLE_ENFORCE_NOT_NULL(sub_scope_,
                           paddle::platform::errors::PreconditionNotMet(
@@ -305,7 +305,7 @@ void OptimizeInferenceProgram() {
 
   Config config_;
   Argument argument_;
-  std::unique_ptr<NaiveExecutor> executor_;
+  //std::unique_ptr<NaiveExecutor> executor_;
   paddle::platform::Place place_;
   std::shared_ptr<Scope> scope_;
   Scope *sub_scope_{nullptr};
@@ -334,6 +334,7 @@ void OptimizeInferenceProgram() {
 
 Predictor::Predictor(const Config& config) : impl_{new Impl{config}} {
   impl_->predictor_id_ = paddle::inference::GetUniqueId();
+  impl_->Init(nullptr, nullptr);
 }
 
 std::vector<std::string> Predictor::GetInputNames() {
@@ -367,7 +368,7 @@ return {};
 }
 
 bool Predictor::Run() {
-  impl_->executor_->Run();
+  //impl_->executor_->Run();
   return true;
 }
 
@@ -408,7 +409,66 @@ std::unique_ptr<Predictor> Predictor::Clone() {
 
 std::shared_ptr<Predictor> CreatePredictor(
 const Config& config) {
-  return std::make_shared<Predictor>(config);
+  if (config.glog_info_disabled()) {
+    FLAGS_logtostderr = 1;
+    FLAGS_minloglevel = 2;  // GLOG_ERROR
+  }
+  VLOG(3) << "create AnalysisConfig";
+  PADDLE_ENFORCE_EQ(
+      config.is_valid(), true,
+      paddle::platform::errors::InvalidArgument(
+          "Note: Each config can only be used for one predictor."));
+
+  if (config.use_gpu()) {
+    static std::once_flag gflags_initialized;
+
+    std::call_once(gflags_initialized, [&]() {
+      std::vector<std::string> gflags;
+      PADDLE_ENFORCE_GE(
+          config.memory_pool_init_size_mb(), 0.f,
+          paddle::platform::errors::InvalidArgument(
+              "The size of memory pool should be greater than 0."));
+      PADDLE_ENFORCE_GE(
+          config.gpu_device_id(), 0,
+          paddle::platform::errors::InvalidArgument(
+              "Invalid device id (%d). The device id should be greater than 0.",
+              config.gpu_device_id()));
+      gflags.push_back("dummy");
+
+      float fraction_of_gpu_memory = config.fraction_of_gpu_memory_for_pool();
+      if (fraction_of_gpu_memory > 0.95f) {
+        LOG(ERROR)
+            << "Allocate too much memory for the GPU memory pool, assigned "
+            << config.memory_pool_init_size_mb() << " MB";
+        LOG(ERROR) << "Try to shink the value by setting "
+                      "AnalysisConfig::EnableGpu(...)";
+      }
+
+      if (fraction_of_gpu_memory >= 0.0f || fraction_of_gpu_memory <= 0.95f) {
+        std::string flag = "--fraction_of_gpu_memory_to_use=" +
+                           std::to_string(fraction_of_gpu_memory);
+        VLOG(3) << "set flag: " << flag;
+        gflags.push_back(flag);
+        gflags.push_back("--cudnn_deterministic=True");
+      }
+      if (paddle::framework::InitGflags(gflags)) {
+        VLOG(3) << "The following gpu analysis configurations only take effect "
+                   "for the first predictor: ";
+        for (size_t i = 1; i < gflags.size(); ++i) {
+          VLOG(3) << gflags[i];
+        }
+      } else {
+        LOG(WARNING) << "The one-time configuration of analysis predictor "
+                        "failed, which may be due to native predictor called "
+                        "first and its configurations taken effect.";
+      }
+    });
+  }
+
+  std::unique_ptr<Predictor> predictor(new Predictor(config));
+  // Each config can only be used for one predictor.
+  config.SetInValid();
+  return predictor;
 }
 
 } // namespace tensorrt

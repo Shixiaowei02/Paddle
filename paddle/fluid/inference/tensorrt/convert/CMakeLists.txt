@@ -14,5 +14,5 @@ nv_library(tensorrt_converter
                 nearest_interp_op.cc
            DEPS tensorrt_engine tensorrt_plugin operator scope framework_proto op_registry)
 
-nv_test(test_op_converter SRCS test_op_converter.cc DEPS
-  paddle_framework ${GLOB_OPERATOR_DEPS} tensorrt_engine tensorrt_converter)
+#nv_test(test_op_converter SRCS test_op_converter.cc DEPS
+#  paddle_framework ${GLOB_OPERATOR_DEPS} tensorrt_engine tensorrt_converter)
