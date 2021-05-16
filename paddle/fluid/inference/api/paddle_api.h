@@ -184,6 +184,7 @@ class PD_INFER_DECL ZeroCopyTensor : public paddle_infer::Tensor {
 
  private:
   friend class AnalysisPredictor;
+  friend class TensorRTPredictor;
   explicit ZeroCopyTensor(void* scope) : paddle_infer::Tensor{scope} {}
 };
 

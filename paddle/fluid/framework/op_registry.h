@@ -275,6 +275,7 @@ struct OpKernelRegistrarFunctorEx<PlaceType, false, I,
     VarTypeInference
     InferShapeBase
 */
+
 #define REGISTER_OPERATOR(op_type, op_class, ...)                        \
   STATIC_ASSERT_GLOBAL_NAMESPACE(                                        \
       __reg_op__##op_type,                                               \
@@ -285,6 +286,21 @@ struct OpKernelRegistrarFunctorEx<PlaceType, false, I,
     __op_registrar_##op_type##__.Touch();                                \
     return 0;                                                            \
   }
+
+/*
+#define REGISTER_OPERATOR(op_type, op_class, ...) 
+
+#define REGISTER_OPERATOR__(op_type, op_class, ...)                        \
+  STATIC_ASSERT_GLOBAL_NAMESPACE(                                        \
+      __reg_op__##op_type,                                               \
+      "REGISTER_OPERATOR must be called in global namespace");           \
+  static ::paddle::framework::OperatorRegistrar<op_class, ##__VA_ARGS__> \
+      __op_registrar_##op_type##__(#op_type);                            \
+  int TouchOpRegistrar_##op_type() {                                     \
+    __op_registrar_##op_type##__.Touch();                                \
+    return 0;                                                            \
+  }
+*/
 
 #define REGISTER_OP_WITHOUT_GRADIENT(op_type, op_class, op_maker_class) \
   REGISTER_OPERATOR(op_type, op_class, op_maker_class, \

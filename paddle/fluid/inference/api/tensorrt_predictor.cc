@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/inference/api/analysis_predictor.h"
+#include "paddle/fluid/inference/api/paddle_tensorrt_predictor.h"
 #include <glog/logging.h>
 #include <algorithm>
 #include <fstream>
@@ -76,6 +76,7 @@ bool IsPersistable(const framework::VarDesc *var) {
 }
 }  // namespace
 
+namespace {
 bool PaddleTensorToLoDTensor(const PaddleTensor &pt, framework::LoDTensor *t,
                              const platform::Place &place) {
   framework::DDim ddim = framework::make_ddim(pt.shape);
@@ -141,6 +142,7 @@ bool PaddleTensorToLoDTensor(const PaddleTensor &pt, framework::LoDTensor *t,
   t->set_lod(lod);
   return true;
 }
+} // namespace
 
 bool TensorRTPredictor::Init(
     const std::shared_ptr<framework::Scope> &parent_scope,
@@ -595,9 +597,7 @@ void TensorRTPredictor::OptimizeInferenceProgram() {
   LOG(INFO) << "======= optimize end =======";
 }
 
-template <>
-std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
-    AnalysisConfig, PaddleEngineKind::kAnalysis>(const AnalysisConfig &config) {
+std::unique_ptr<PaddlePredictor> CreateTensorRTPredictor(const AnalysisConfig &config) {
   // TODO(NHZlX): Should add the link to the doc of
   // paddle_infer::CreatePredictor<paddle_infer::Config>
   if (config.glog_info_disabled()) {
@@ -705,6 +705,7 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
 }
 
 bool TensorRTPredictor::MkldnnQuantize() {
+/*
 #if PADDLE_WITH_MKLDNN
   if (!mkldnn_quantizer_)
     mkldnn_quantizer_ = new TensorRTPredictor::MkldnnQuantizer(
@@ -714,6 +715,8 @@ bool TensorRTPredictor::MkldnnQuantize() {
   LOG(ERROR) << "Please compile with MKLDNN first to use MkldnnQuantizer";
   return false;
 #endif
+*/
+return {};
 }
 
 void TensorRTPredictor::PrepareFeedFetch() {
@@ -1077,10 +1080,12 @@ TensorRTPredictor::~TensorRTPredictor() {
   }
 
 #if PADDLE_WITH_MKLDNN
+/*
   if (mkldnn_quantizer_) {
     delete mkldnn_quantizer_;
     mkldnn_quantizer_ = nullptr;
   }
+*/
 #endif
 
   memory::Release(place_);
@@ -1136,166 +1141,4 @@ void TensorRTPredictor::SaveOptimModel(const std::string &dir) {
   exe.Run(save_program, scope(), 0, true, true);
 }
 
-template <>
-std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<AnalysisConfig>(
-    const AnalysisConfig &config) {
-  LOG(WARNING) << "Deprecated. Please use CreatePredictor instead.";
-  return CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
-      config);
-}
-
 }  // namespace paddle
-
-#if PADDLE_WITH_TENSORRT
-USE_TRT_CONVERTER(elementwise_add_weight);
-USE_TRT_CONVERTER(elementwise_add_tensor);
-USE_TRT_CONVERTER(elementwise_sub_tensor);
-USE_TRT_CONVERTER(elementwise_div_tensor);
-USE_TRT_CONVERTER(elementwise_mul_tensor);
-USE_TRT_CONVERTER(elementwise_max_tensor);
-USE_TRT_CONVERTER(elementwise_min_tensor);
-USE_TRT_CONVERTER(elementwise_pow_tensor);
-USE_TRT_CONVERTER(transpose);
-USE_TRT_CONVERTER(flatten);
-USE_TRT_CONVERTER(matmul);
-USE_TRT_CONVERTER(conv2d);
-USE_TRT_CONVERTER(relu);
-USE_TRT_CONVERTER(sigmoid);
-USE_TRT_CONVERTER(tanh);
-USE_TRT_CONVERTER(fc);
-USE_TRT_CONVERTER(pool2d);
-USE_TRT_CONVERTER(softmax);
-USE_TRT_CONVERTER(batch_norm);
-USE_TRT_CONVERTER(concat);
-USE_TRT_CONVERTER(dropout);
-USE_TRT_CONVERTER(pad);
-USE_TRT_CONVERTER(hard_sigmoid);
-USE_TRT_CONVERTER(hard_swish);
-USE_TRT_CONVERTER(split);
-USE_TRT_CONVERTER(prelu);
-USE_TRT_CONVERTER(conv2d_transpose);
-USE_TRT_CONVERTER(leaky_relu);
-USE_TRT_CONVERTER(shuffle_channel);
-USE_TRT_CONVERTER(swish);
-USE_TRT_CONVERTER(group_norm);
-USE_TRT_CONVERTER(instance_norm);
-USE_TRT_CONVERTER(layer_norm);
-USE_TRT_CONVERTER(gelu);
-USE_TRT_CONVERTER(multihead_matmul);
-USE_TRT_CONVERTER(fused_embedding_eltwise_layernorm);
-USE_TRT_CONVERTER(skip_layernorm);
-USE_TRT_CONVERTER(slice);
-USE_TRT_CONVERTER(scale);
-USE_TRT_CONVERTER(stack);
-USE_TRT_CONVERTER(clip);
-USE_TRT_CONVERTER(gather);
-USE_TRT_CONVERTER(anchor_generator);
-USE_TRT_CONVERTER(yolo_box);
-USE_TRT_CONVERTER(roi_align);
-USE_TRT_CONVERTER(affine_channel);
-USE_TRT_CONVERTER(multiclass_nms);
-USE_TRT_CONVERTER(nearest_interp);
-#endif
-
-namespace paddle_infer {
-
-Predictor::Predictor(const Config &config) {
-  const_cast<Config *>(&config)->SwitchUseFeedFetchOps(false);
-  // The second parameter indicates that the discard log is not printed
-  predictor_ = paddle::CreatePaddlePredictor<
-      Config, paddle::PaddleEngineKind::kAnalysis>(config);
-}
-
-std::vector<std::string> Predictor::GetInputNames() {
-  return predictor_->GetInputNames();
-}
-
-std::unique_ptr<Tensor> Predictor::GetInputHandle(const std::string &name) {
-  return predictor_->GetInputTensor(name);
-}
-
-std::vector<std::string> Predictor::GetOutputNames() {
-  return predictor_->GetOutputNames();
-}
-
-std::unique_ptr<Tensor> Predictor::GetOutputHandle(const std::string &name) {
-  return predictor_->GetOutputTensor(name);
-}
-
-bool Predictor::Run() { return predictor_->ZeroCopyRun(); }
-
-std::unique_ptr<Predictor> Predictor::Clone() {
-  auto analysis_pred = predictor_->Clone();
-  std::unique_ptr<Predictor> pred(new Predictor(std::move(analysis_pred)));
-  return pred;
-}
-
-void Predictor::ClearIntermediateTensor() {
-  predictor_->ClearIntermediateTensor();
-}
-
-uint64_t Predictor::TryShrinkMemory() { return predictor_->TryShrinkMemory(); }
-
-int GetNumBytesOfDataType(DataType dtype) {
-  switch (dtype) {
-    case DataType::FLOAT32:
-      return sizeof(float);
-    case DataType::INT64:
-      return sizeof(int64_t);
-    case DataType::INT32:
-      return sizeof(int32_t);
-    case DataType::UINT8:
-      return sizeof(uint8_t);
-    default:
-      assert(false);
-      return -1;
-  }
-}
-
-std::string GetVersion() { return paddle::get_version(); }
-
-std::string UpdateDllFlag(const char *name, const char *value) {
-  return paddle::UpdateDllFlag(name, value);
-}
-
-}  // namespace paddle_infer
-
-namespace paddle_infer {
-std::shared_ptr<Predictor> CreatePredictor(const Config &config) {  // NOLINT
-  std::shared_ptr<Predictor> predictor(new Predictor(config));
-  return predictor;
-}
-
-namespace services {
-PredictorPool::PredictorPool(const Config &config, size_t size) {
-  PADDLE_ENFORCE_GE(
-      size, 1UL,
-      paddle::platform::errors::InvalidArgument(
-          "The predictor pool size should be greater than 1, but it's (%d)",
-          size));
-  Config copy_config(config);
-  main_pred_.reset(new Predictor(config));
-  for (size_t i = 0; i < size - 1; i++) {
-    if (config.tensorrt_engine_enabled()) {
-      Config config_tmp(copy_config);
-      preds_.push_back(
-          std::move(std::unique_ptr<Predictor>(new Predictor(config_tmp))));
-    } else {
-      preds_.push_back(std::move(main_pred_->Clone()));
-    }
-  }
-}
-
-Predictor *PredictorPool::Retrive(size_t idx) {
-  PADDLE_ENFORCE_LT(
-      idx, preds_.size() + 1,
-      paddle::platform::errors::InvalidArgument(
-          "There are (%d) predictors in the pool, but the idx is (%d)", idx,
-          preds_.size() + 1));
-  if (idx == 0) {
-    return main_pred_.get();
-  }
-  return preds_[idx - 1].get();
-}
-}  // namespace services
-}  // namespace paddle_infer
