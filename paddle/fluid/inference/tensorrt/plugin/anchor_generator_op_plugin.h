@@ -19,7 +19,7 @@
 
 #include "paddle/fluid/inference/tensorrt/engine.h"
 #include "paddle/fluid/inference/tensorrt/plugin/trt_plugin.h"
-
+/*
 namespace paddle {
 namespace inference {
 namespace tensorrt {
@@ -192,10 +192,11 @@ class AnchorGeneratorPluginDynamicCreator : public nvinfer1::IPluginCreator {
   std::string namespace_;
   nvinfer1::PluginFieldCollection field_collection_;
 };
-REGISTER_TRT_PLUGIN_V2(AnchorGeneratorPluginDynamicCreator);
+//REGISTER_TRT_PLUGIN_V2(AnchorGeneratorPluginDynamicCreator);
 #endif
 
 }  // namespace plugin
 }  // namespace tensorrt
 }  // namespace inference
 }  // namespace paddle
+*/

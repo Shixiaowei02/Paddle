@@ -15,11 +15,12 @@ limitations under the License. */
 #include "paddle/fluid/inference/tensorrt/convert/op_converter.h"
 #include "paddle/fluid/inference/tensorrt/plugin/anchor_generator_op_plugin.h"
 
+/*
 namespace paddle {
 namespace inference {
 namespace tensorrt {
 
-/* Anchor Generator Op */
+
 class AnchorGeneratorOpConverter : public OpConverter {
  public:
   void operator()(const paddle::framework::proto::OpDesc& op,
@@ -77,3 +78,4 @@ class AnchorGeneratorOpConverter : public OpConverter {
 }  // namespace paddle
 
 REGISTER_TRT_OP_CONVERTER(anchor_generator, AnchorGeneratorOpConverter);
+*/

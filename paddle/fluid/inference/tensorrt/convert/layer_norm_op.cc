@@ -14,7 +14,7 @@ limitations under the License. */
 #include "paddle/fluid/operators/layer_norm_op.h"
 #include "paddle/fluid/inference/tensorrt/convert/op_converter.h"
 #include "paddle/fluid/inference/tensorrt/plugin/layer_norm_op_plugin.h"
-
+/*
 namespace paddle {
 namespace inference {
 namespace tensorrt {
@@ -87,3 +87,4 @@ class LayerNormOpConverter : public OpConverter {
 }  // namespace paddle
 
 REGISTER_TRT_OP_CONVERTER(layer_norm, LayerNormOpConverter);
+*/
