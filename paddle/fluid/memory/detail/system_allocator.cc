@@ -115,6 +115,11 @@ void* GPUAllocator::Alloc(size_t* index, size_t size) {
   if (size <= 0) return nullptr;
 
   void* p;
+  platform::SetDeviceId(gpu_id_);
+  cudaMalloc(&p, size);
+  return p;
+
+  /*
   auto result = platform::RecordedCudaMalloc(&p, size, gpu_id_);
 
   if (result == gpuSuccess) {
@@ -154,6 +159,7 @@ void* GPUAllocator::Alloc(size_t* index, size_t size) {
         string::HumanReadableSize(allocated), string::HumanReadableSize(avail),
         gpu_id_, FLAGS_fraction_of_gpu_memory_to_use, err_msg));
   }
+  */
 }
 
 void GPUAllocator::Free(void* p, size_t size, size_t index) {
@@ -165,8 +171,8 @@ void GPUAllocator::Free(void* p, size_t size, size_t index) {
                         "allocated gpu memory (%d)",
                         size, gpu_alloc_size_));
   gpu_alloc_size_ -= size;
-
-  platform::RecordedCudaFree(p, size, gpu_id_);
+  cudaFree(p);
+  //platform::RecordedCudaFree(p, size, gpu_id_);
 }
 
 bool GPUAllocator::UseGpu() const { return true; }

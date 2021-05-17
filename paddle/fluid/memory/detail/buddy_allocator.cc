@@ -225,6 +225,7 @@ BuddyAllocator::PoolSet::iterator BuddyAllocator::RefillPool(
 
 #if defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP)
   if (system_allocator_->UseGpu()) {
+    /*
     if ((total_used_ + total_free_) == 0) {
       // Compute the allocation size for gpu for the first allocation.
       allocate_bytes = std::max(platform::GpuInitAllocSize(), request_bytes);
@@ -236,6 +237,7 @@ BuddyAllocator::PoolSet::iterator BuddyAllocator::RefillPool(
       }
       allocate_bytes = std::max(realloc_size_, request_bytes);
     }
+    */
   }
 #endif
 #ifdef PADDLE_WITH_ASCEND_CL

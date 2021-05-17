@@ -310,12 +310,14 @@ void SetDeviceId(int id) {
 }
 
 void GpuMemoryUsage(size_t *available, size_t *total) {
+  LOG(FATAL) << "Cannot continue execution due to overhead: GpuMemoryUsage().";
   size_t actual_available, actual_total;
   RecordedCudaMemGetInfo(available, total, &actual_available, &actual_total,
                          platform::GetCurrentDeviceId());
 }
 
 size_t GpuAvailableMemToAlloc() {
+  LOG(INFO) << "Cannot continue execution due to overhead: GpuAvailableMemToAlloc().";
   size_t total = 0;
   size_t available = 0;
   GpuMemoryUsage(&available, &total);
@@ -568,18 +570,18 @@ class RecordedCudaMallocHelper {
   bool GetMemInfo(size_t *avail, size_t *total, size_t *actual_avail,
                   size_t *actual_total) {
     {
-     // CUDADeviceGuard guard(dev_id_);
+     CUDADeviceGuard guard(dev_id_);
 #ifdef PADDLE_WITH_HIP
       auto result = hipMemGetInfo(actual_avail, actual_total);
 #else
-      //auto result = cudaMemGetInfo(actual_avail, actual_total);
+      LOG(FATAL) << "Cannot continue execution due to overhead: cudaMemGetInfo().";
+      auto result = cudaMemGetInfo(actual_avail, actual_total);
 #endif
-      //if (result != gpuSuccess) {
-      //  *actual_avail = 0;
-      //}
-      //RaiseNonOutOfMemoryError(&result);
+      if (result != gpuSuccess) {
+        *actual_avail = 0;
+      }
+      RaiseNonOutOfMemoryError(&result);
     }
-/*
     if (NeedRecord()) {
       std::lock_guard<std::mutex> guard(*mtx_);
       *avail = std::min(*actual_avail, limit_size_ - cur_size_);
@@ -590,7 +592,6 @@ class RecordedCudaMallocHelper {
       *total = *actual_total;
       return false;
     }
-  */
   return true;
   }
 

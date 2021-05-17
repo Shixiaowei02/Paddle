@@ -37,20 +37,28 @@ void CUDAAllocator::FreeImpl(Allocation* allocation) {
       BOOST_GET_CONST(platform::CUDAPlace, allocation->place()), place_,
       platform::errors::PermissionDenied(
           "GPU memory is freed in incorrect device. This may be a bug"));
-  platform::RecordedCudaFree(allocation->ptr(), allocation->size(),
-                             place_.device);
+  platform::SetDeviceId(place_.device);
+  //platform::RecordedCudaFree(allocation->ptr(), allocation->size(),
+  //                          place_.device);
+  cudaFree(allocation->ptr());
   delete allocation;
 }
 
 Allocation* CUDAAllocator::AllocateImpl(size_t size) {
-  std::call_once(once_flag_, [this] { platform::SetDeviceId(place_.device); });
+  // std::call_once(once_flag_, [this] { platform::SetDeviceId(place_.device); });
 
   void* ptr;
-  auto result = platform::RecordedCudaMalloc(&ptr, size, place_.device);
+  platform::SetDeviceId(place_.device);
+  auto result = cudaMalloc(&ptr, size);
+
   if (LIKELY(result == gpuSuccess)) {
     return new Allocation(ptr, size, platform::Place(place_));
+  } else {
+    LOG(FATAL) << "CUDA alloc error!";
+    return nullptr;
   }
 
+  /*
   size_t avail, total, actual_avail, actual_total;
   bool is_limited = platform::RecordedCudaMemGetInfo(
       &avail, &total, &actual_avail, &actual_total, place_.device);
@@ -77,6 +85,7 @@ Allocation* CUDAAllocator::AllocateImpl(size_t size) {
       place_.device, string::HumanReadableSize(size), place_.device,
       string::HumanReadableSize(allocated), string::HumanReadableSize(avail),
       place_.device, err_msg));
+  */
 }
 
 }  // namespace allocation

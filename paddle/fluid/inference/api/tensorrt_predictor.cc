@@ -633,8 +633,8 @@ std::unique_ptr<PaddlePredictor> CreateTensorRTPredictor(const AnalysisConfig &c
               "Invalid device id (%d). The device id should be greater than 0.",
               config.gpu_device_id()));
       gflags.push_back("dummy");
-
-      float fraction_of_gpu_memory = config.fraction_of_gpu_memory_for_pool();
+      float fraction_of_gpu_memory = 0.f;
+      //float fraction_of_gpu_memory = config.fraction_of_gpu_memory_for_pool();
       if (fraction_of_gpu_memory > 0.95f) {
         LOG(ERROR)
             << "Allocate too much memory for the GPU memory pool, assigned "
@@ -651,19 +651,19 @@ std::unique_ptr<PaddlePredictor> CreateTensorRTPredictor(const AnalysisConfig &c
         gflags.push_back("--cudnn_deterministic=True");
       }
 
-      if (config.thread_local_stream_enabled()) {
-        gflags.push_back("--allocator_strategy=thread_local");
-        process_level_allocator_enabled = false;
-      } else {
-        process_level_allocator_enabled = true;
-      }
-
 // TODO(wilber): jetson tx2 may fail to run the model due to insufficient memory
 // under the native_best_fit strategy. Modify the default allocation strategy to
 // auto_growth. todo, find a more appropriate way to solve the problem.
 #ifdef WITH_NV_JETSON
       gflags.push_back("--allocator_strategy=auto_growth");
 #endif
+
+      if (config.thread_local_stream_enabled()) {
+        gflags.push_back("--allocator_strategy=thread_local");
+        process_level_allocator_enabled = false;
+      } else {
+        process_level_allocator_enabled = true;
+      }
 
       if (framework::InitGflags(gflags)) {
         VLOG(3) << "The following gpu analysis configurations only take effect "
