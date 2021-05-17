@@ -46,6 +46,9 @@ endif()
 cc_library(analysis_predictor SRCS analysis_predictor.cc ${mkldnn_quantizer_src} DEPS ${inference_deps} 
           zero_copy_tensor ir_pass_manager op_compatible_info)
 
+cc_library(tensorrt_predictor SRCS tensorrt_predictor.cc ${mkldnn_quantizer_src} DEPS ${inference_deps} 
+          zero_copy_tensor ir_pass_manager op_compatible_info layer)
+
 cc_test(test_paddle_inference_api SRCS api_tester.cc DEPS paddle_inference_api)
 
 if(WITH_TESTING)

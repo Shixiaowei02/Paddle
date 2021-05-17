@@ -41,7 +41,7 @@ add_subdirectory(api)
 
 # Create static inference library if needed
 # All static libs in inference/api
-set(STATIC_INFERENCE_API paddle_inference_api analysis_predictor
+set(STATIC_INFERENCE_API paddle_inference_api tensorrt_predictor analysis_predictor
      zero_copy_tensor reset_tensor_array
         analysis_config paddle_pass_builder activation_functions ${mkldnn_quantizer_cfg})
 #TODO(wilber, T8T9): Do we still need to support windows gpu static library?
@@ -72,12 +72,13 @@ set(SHARED_INFERENCE_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/api/api.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/api/api_impl.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/api/analysis_predictor.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/api/tensorrt_predictor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/api/details/zero_copy_tensor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/io_utils.cc
     ${mkldnn_quantizer_src_file})
 
 # shared inference library deps
-set(SHARED_INFERENCE_DEPS ${fluid_modules} analysis_predictor)
+set(SHARED_INFERENCE_DEPS ${fluid_modules} analysis_predictor tensorrt_predictor)
 
 if (WITH_CRYPTO) 
     set(SHARED_INFERENCE_DEPS ${SHARED_INFERENCE_DEPS} paddle_crypto)

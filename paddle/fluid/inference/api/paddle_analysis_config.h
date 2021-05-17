@@ -45,6 +45,7 @@
 namespace paddle {
 
 class AnalysisPredictor;
+class TensorRTPredictor;
 struct MkldnnQuantizerConfig;
 
 ///
@@ -548,6 +549,8 @@ struct PD_INFER_DECL AnalysisConfig {
   bool is_valid() const { return is_valid_; }
 
   friend class ::paddle::AnalysisPredictor;
+
+  friend class ::paddle::TensorRTPredictor;
 
   ///
   /// \brief Get a pass builder for customize the passes in IR analysis phase.

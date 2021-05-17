@@ -41,6 +41,11 @@ limitations under the License. */
 /// \since 2.0.0-beta
 ///
 
+namespace paddle {
+std::unique_ptr<PaddlePredictor> CreateTensorRTPredictor(
+    const AnalysisConfig& config);
+}
+
 namespace paddle_infer {
 using DataType = paddle::PaddleDType;
 using PlaceType = paddle::PaddlePlace;

@@ -325,17 +325,23 @@ CUDAContext::CUDAContext(const CUDAPlace& place,
   place_ = place;
   CUDADeviceGuard guard(place_.device);
   stream_.reset(new stream::CUDAStream(place, priority));
-  InitEigenContext();
-  InitCuBlasContext();
-  InitCuDNNContext();
   //InitCuSolverContext();
+// InitEigenContext();
+// InitCuBlasContext();
+// InitCuDNNContext();
+#ifndef PADDLE_WITH_HIP
+// InitCuSolverContext();
+#endif
 }
 
 CUDAContext::~CUDAContext() {
   CUDADeviceGuard guard(place_.device);
-  DestoryCuDNNContext();
-  DestoryCuBlasContext();
   //DestoryCuSolverContext();
+// DestoryCuDNNContext();
+// DestoryCuBlasContext();
+#ifndef PADDLE_WITH_HIP
+// DestoryCuSolverContext();
+#endif
 }
 
 CUDADeviceContext::CUDADeviceContext(CUDAPlace place) : place_(place) {

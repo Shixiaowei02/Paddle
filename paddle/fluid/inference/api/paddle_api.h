@@ -247,6 +247,7 @@ class PD_INFER_DECL ZeroCopyTensor {
   PaddlePlace place_;
   PaddleDType dtype_;
   int device_;
+  friend class TensorRTPredictor;
 };
 
 /// \brief A Predictor for executing inference on a model.
