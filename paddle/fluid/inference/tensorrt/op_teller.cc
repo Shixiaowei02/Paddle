@@ -104,6 +104,10 @@ struct SimpleOpTypeSetTeller : public Teller {
       "scale",
       "stack",
       "transpose2",
+      "reshape2",
+      "reshape",
+      "flatten2",
+      "flatten",
   };
 };
 

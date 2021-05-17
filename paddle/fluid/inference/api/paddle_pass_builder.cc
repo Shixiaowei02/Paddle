@@ -84,7 +84,7 @@ const std::vector<std::string> kTRTSubgraphPasses({
       "multihead_matmul_fuse_pass_v2",          //
       "skip_layernorm_fuse_pass",               //
       "unsqueeze2_eltwise_fuse_pass",           //
-      //"conv_bn_fuse_pass",                      //
+      "conv_bn_fuse_pass",                      //
       "squeeze2_matmul_fuse_pass",              //
       "reshape2_matmul_fuse_pass",              //
       "flatten2_matmul_fuse_pass",              //

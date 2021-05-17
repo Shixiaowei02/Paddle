@@ -1148,6 +1148,8 @@ USE_TRT_CONVERTER(skip_layernorm);
 USE_TRT_CONVERTER(slice);
 USE_TRT_CONVERTER(scale);
 USE_TRT_CONVERTER(stack);
+USE_TRT_CONVERTER(reshape);
+USE_TRT_CONVERTER(flatten);
 //USE_TRT_CONVERTER(clip);
 #endif
 
