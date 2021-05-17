@@ -568,18 +568,18 @@ class RecordedCudaMallocHelper {
   bool GetMemInfo(size_t *avail, size_t *total, size_t *actual_avail,
                   size_t *actual_total) {
     {
-     // CUDADeviceGuard guard(dev_id_);
+      CUDADeviceGuard guard(dev_id_);
 #ifdef PADDLE_WITH_HIP
       auto result = hipMemGetInfo(actual_avail, actual_total);
 #else
-      //auto result = cudaMemGetInfo(actual_avail, actual_total);
+      auto result = cudaMemGetInfo(actual_avail, actual_total);
 #endif
-      //if (result != gpuSuccess) {
-      //  *actual_avail = 0;
-      //}
-      //RaiseNonOutOfMemoryError(&result);
+      if (result != gpuSuccess) {
+        *actual_avail = 0;
+      }
+      RaiseNonOutOfMemoryError(&result);
     }
-/*
+
     if (NeedRecord()) {
       std::lock_guard<std::mutex> guard(*mtx_);
       *avail = std::min(*actual_avail, limit_size_ - cur_size_);
@@ -590,8 +590,6 @@ class RecordedCudaMallocHelper {
       *total = *actual_total;
       return false;
     }
-  */
-  return true;
   }
 
   inline bool NeedRecord() const { return limit_size_ != 0; }
