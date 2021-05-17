@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "paddle/fluid/inference/api/tensorrt_predictor.h"
 #include <glog/logging.h>
 #include <algorithm>
 #include <fstream>
@@ -20,7 +21,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "paddle/fluid/extension/include/ext_op_meta_info.h"
 #include "paddle/fluid/framework/feed_fetch_method.h"
 #include "paddle/fluid/framework/feed_fetch_type.h"
 #include "paddle/fluid/framework/ir/fuse_pass_base.h"
@@ -29,12 +29,10 @@
 #include "paddle/fluid/framework/scope.h"
 #include "paddle/fluid/framework/var_type_traits.h"
 #include "paddle/fluid/framework/version.h"
-#include "paddle/fluid/imperative/layer.h"
 #include "paddle/fluid/inference/analysis/helper.h"
 #include "paddle/fluid/inference/analysis/passes/memory_optimize_pass.h"
 #include "paddle/fluid/inference/api/helper.h"
 #include "paddle/fluid/inference/api/paddle_inference_pass.h"
-#include "paddle/fluid/inference/api/paddle_tensorrt_predictor.h"
 #include "paddle/fluid/inference/utils/singleton.h"
 #include "paddle/fluid/memory/memcpy.h"
 #include "paddle/fluid/platform/cpu_helper.h"
@@ -42,6 +40,7 @@
 #include "paddle/fluid/platform/gpu_info.h"
 #include "paddle/fluid/platform/place.h"
 #include "paddle/fluid/platform/profiler.h"
+#include "paddle/fluid/platform/init.h"
 
 #ifdef PADDLE_WITH_MKLML
 #include "paddle/fluid/platform/dynload/mklml.h"
@@ -75,9 +74,8 @@ bool IsPersistable(const framework::VarDesc *var) {
   }
   return false;
 }
-}  // namespace
 
-namespace {
+
 bool PaddleTensorToLoDTensor(const PaddleTensor &pt, framework::LoDTensor *t,
                              const platform::Place &place) {
   framework::DDim ddim = framework::make_ddim(pt.shape);
@@ -106,11 +104,8 @@ bool PaddleTensorToLoDTensor(const PaddleTensor &pt, framework::LoDTensor *t,
     // TODO(panyx0718): Init LoDTensor from existing memcpy to save a copy.
     std::memcpy(static_cast<void *>(input_ptr), pt.data.data(),
                 pt.data.length());
-  } else if (platform::is_gpu_place(place)) {
-    PADDLE_ENFORCE_EQ(platform::is_xpu_place(place), false,
-                      platform::errors::InvalidArgument(
-                          "Only one choice can be made between CPU and XPU."));
-#if defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP)
+  } else {
+#ifdef PADDLE_WITH_CUDA
     platform::DeviceContextPool &pool = platform::DeviceContextPool::Instance();
     auto *dev_ctx =
         static_cast<const platform::CUDADeviceContext *>(pool.Get(place));
@@ -122,18 +117,6 @@ bool PaddleTensorToLoDTensor(const PaddleTensor &pt, framework::LoDTensor *t,
     PADDLE_THROW(paddle::platform::errors::Fatal(
         "Not compile with CUDA, should not reach here."));
 #endif
-  } else if (platform::is_xpu_place(place)) {
-#ifdef PADDLE_WITH_XPU
-    auto dst_xpu_place = BOOST_GET_CONST(platform::XPUPlace, place);
-    memory::Copy(dst_xpu_place, static_cast<void *>(input_ptr),
-                 platform::CPUPlace(), pt.data.data(), pt.data.length());
-#else
-    PADDLE_THROW(paddle::platform::errors::Fatal(
-        "Not compile with XPU, should not reach here."));
-#endif
-  } else {
-    PADDLE_THROW(paddle::platform::errors::InvalidArgument(
-        "The analysis predictor supports CPU, GPU and XPU now."));
   }
   // TODO(Superjomn) Low performance, need optimization for heavy LoD copy.
   framework::LoD lod;
@@ -144,7 +127,6 @@ bool PaddleTensorToLoDTensor(const PaddleTensor &pt, framework::LoDTensor *t,
   return true;
 }
 }  // namespace
-
 bool TensorRTPredictor::Init(
     const std::shared_ptr<framework::Scope> &parent_scope,
     const std::shared_ptr<framework::ProgramDesc> &program) {
@@ -182,7 +164,48 @@ bool TensorRTPredictor::Init(
 
   return true;
 }
+namespace {
+void ParseCommandLineFlags(){
+    std::vector<char *> internal_argv;
+    std::string dummy = "dummy";
+    internal_argv.push_back(strdup(dummy.c_str()));
+    std::vector<std::string> envs;
+    std::vector<std::string> undefok;
+#ifdef PADDLE_WITH_CUDA
+    envs.push_back("fraction_of_gpu_memory_to_use");
+    envs.push_back("initial_gpu_memory_in_mb");
+    envs.push_back("reallocate_gpu_memory_in_mb");
+#endif
+    envs.push_back("allocator_strategy");
+    envs.push_back("initial_cpu_memory_in_mb");
+    undefok.push_back("initial_cpu_memory_in_mb");
+    char* env_str = nullptr;
+    if (envs.size() > 0) {
+        std::string env_string = "--tryfromenv=";
+        for (auto t : envs) {
+            env_string += t + ",";
+        }
+        env_string = env_string.substr(0, env_string.length() - 1);
+        env_str = strdup(env_string.c_str());
+        internal_argv.push_back(env_str);
+        LOG(INFO) << "get env_string" << env_string;
+    }
 
+    char* undefok_str = nullptr;
+    if (undefok.size() > 0) {
+        std::string undefok_string = "--undefok=";
+        for (auto t : undefok) {
+            undefok_string += t + ",";
+        }
+        undefok_string = undefok_string.substr(0, undefok_string.length() - 1);
+        undefok_str = strdup(undefok_string.c_str());
+        internal_argv.push_back(undefok_str);
+    }
+    int internal_argc = internal_argv.size();
+    char** arr = internal_argv.data();
+    paddle::platform::ParseCommandLineFlags(internal_argc, arr, true);
+}
+}
 bool TensorRTPredictor::PrepareScope(
     const std::shared_ptr<framework::Scope> &parent_scope) {
   if (parent_scope) {
@@ -194,8 +217,16 @@ bool TensorRTPredictor::PrepareScope(
     status_is_cloned_ = true;
   } else {
     paddle::framework::InitDevices();
-    // TODO(wilber): we need to release memory occupied by weights.
-    scope_.reset(new paddle::framework::Scope());
+    scope_.reset(new paddle::framework::Scope(), [](framework::Scope *scope) {
+      delete scope;
+#ifdef PADDLE_WITH_CUDA
+      for (int dev_id = 0; dev_id < paddle::platform::GetCUDADeviceCount();
+           ++dev_id) {
+        memory::Release(platform::CUDAPlace(dev_id));
+      }
+#endif
+      memory::Release(platform::CPUPlace());
+    });
     status_is_cloned_ = false;
   }
   sub_scope_ = &scope_->NewScope();
@@ -230,11 +261,9 @@ bool TensorRTPredictor::PrepareProgram(
 }
 bool TensorRTPredictor::CreateExecutor() {
   if (config_.use_gpu()) {
-    PADDLE_ENFORCE_EQ(config_.use_xpu(), false,
-                      platform::errors::InvalidArgument(
-                          "Only one choice can be made between CPU and XPU."));
+    status_use_gpu_ = true;
     place_ = paddle::platform::CUDAPlace(config_.gpu_device_id());
-#if defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP)
+#ifdef PADDLE_WITH_CUDA
     if (config_.thread_local_stream_enabled()) {
       auto *ctx = static_cast<platform::CUDADeviceContext *>(
           platform::DeviceContextPool::Instance().Get(place_));
@@ -243,30 +272,6 @@ bool TensorRTPredictor::CreateExecutor() {
       ctx->ResetThreadContext(platform::stream::Priority::kNormal);
     }
 #endif
-  } else if (config_.use_xpu()) {
-    if (config_.lite_engine_enabled()) {
-#ifdef LITE_SUBGRAPH_WITH_XPU
-      // Currently, Paddle-Lite's XPU user interface only supports the transfer
-      // of Host data pointers. If it is currently used as a subgraph, execution
-      // efficiency will be sacrificed, so it is temporarily set to cpu place.
-      // And, the current lite engine of xpu must execute all parts of the
-      // model.
-      place_ = paddle::platform::CPUPlace();
-#else
-      PADDLE_THROW(platform::errors::Unavailable(
-          "You tried to use an XPU lite engine, but Paddle was not compiled "
-          "with it."));
-#endif  // LITE_SUBGRAPH_WITH_XPU
-    } else {
-#ifdef PADDLE_WITH_XPU
-      place_ = paddle::platform::XPUPlace(config_.xpu_device_id());
-#else
-      PADDLE_THROW(platform::errors::Unavailable(
-          "You tried to use XPU forward propagation (inference without lite "
-          "engine), but Paddle was not compiled "
-          "with WITH_XPU."));
-#endif  // PADDLE_WITH_XPU
-    }
   } else {
     place_ = paddle::platform::CPUPlace();
   }
@@ -513,9 +518,9 @@ void TensorRTPredictor::PrepareArgument() {
     argument_.SetTensorRtWorkspaceSize(config_.tensorrt_workspace_size_);
     argument_.SetTensorRtMaxBatchSize(config_.tensorrt_max_batchsize_);
     argument_.SetTensorRtMinSubgraphSize(config_.tensorrt_min_subgraph_size_);
-    argument_.SetTensorRtDisabledOPs(config_.trt_disabled_ops_);
     argument_.SetTensorRtUseDLA(config_.trt_use_dla_);
     argument_.SetTensorRtDLACore(config_.trt_dla_core_);
+    argument_.SetTensorRtDisabledOPs(config_.trt_disabled_ops_);
     argument_.SetTensorRtPrecisionMode(config_.tensorrt_precision_mode_);
     argument_.SetTensorRtUseStaticEngine(config_.trt_use_static_engine_);
     argument_.SetTensorRtUseCalibMode(config_.trt_use_calib_mode_);
@@ -524,12 +529,6 @@ void TensorRTPredictor::PrepareArgument() {
     argument_.SetMaxInputShape(config_.max_input_shape_);
     argument_.SetOptimInputShape(config_.optim_input_shape_);
     argument_.SetCloseTrtPluginFp16(config_.disable_trt_plugin_fp16_);
-  }
-
-  if (config_.dlnne_enabled()) {
-    LOG(INFO) << "Dlnne subgraph is enabled";
-    argument_.SetUseDlnne(true);
-    argument_.SetDlnneMinSubgraphSize(config_.dlnne_min_subgraph_size_);
   }
 
   if (config_.lite_engine_enabled()) {
@@ -541,11 +540,6 @@ void TensorRTPredictor::PrepareArgument() {
     argument_.SetLiteZeroCopy(config_.lite_zero_copy_);
     argument_.SetUseXpu(config_.use_xpu_);
     argument_.SetXpuL3WorkspaceSize(config_.xpu_l3_workspace_size_);
-    argument_.SetXpuLocked(config_.xpu_locked_);
-    argument_.SetXpuAutotune(config_.xpu_autotune_);
-    argument_.SetXpuAutotuneFile(config_.xpu_autotune_file_);
-    argument_.SetXpuPrecision(config_.xpu_precision_);
-    argument_.SetXpuAdaptiveSeqlen(config_.xpu_adaptive_seqlen_);
     LOG(INFO) << "Lite subgraph engine is enabled";
   }
 
@@ -553,20 +547,6 @@ void TensorRTPredictor::PrepareArgument() {
     LOG(INFO) << "MKLDNN is enabled";
     argument_.SetMKLDNNEnabledOpTypes(config_.mkldnn_enabled_op_types_);
   }
-
-#ifdef PADDLE_WITH_MKLDNN
-  if (config_.mkldnn_quantizer_enabled()) {
-    LOG(INFO) << "Quantization is enabled";
-    argument_.SetQuantizeEnabledOpTypes(
-        config_.mkldnn_quantizer_config()->enabled_op_types());
-    argument_.SetQuantizeExcludedOpIds(
-        config_.mkldnn_quantizer_config()->excluded_op_ids());
-  }
-  if (config_.use_mkldnn_bfloat16_) {
-    LOG(INFO) << "Bfloat16 is enabled";
-    argument_.SetBfloat16EnabledOpTypes(config_.bfloat16_enabled_op_types_);
-  }
-#endif
 
   auto passes = config_.pass_builder()->AllPasses();
   if (!config_.ir_optim()) {
@@ -598,8 +578,9 @@ void TensorRTPredictor::OptimizeInferenceProgram() {
   LOG(INFO) << "======= optimize end =======";
 }
 
-std::unique_ptr<PaddlePredictor> CreateTensorRTPredictor(
-    const AnalysisConfig &config) {
+template <>
+std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
+    AnalysisConfig, PaddleEngineKind::kAnalysis>(const AnalysisConfig &config) {
   // TODO(NHZlX): Should add the link to the doc of
   // paddle_infer::CreatePredictor<paddle_infer::Config>
   if (config.glog_info_disabled()) {
@@ -607,16 +588,11 @@ std::unique_ptr<PaddlePredictor> CreateTensorRTPredictor(
     FLAGS_minloglevel = 2;  // GLOG_ERROR
   }
   VLOG(3) << "create AnalysisConfig";
+  ParseCommandLineFlags();
   PADDLE_ENFORCE_EQ(
       config.is_valid(), true,
       platform::errors::InvalidArgument(
           "Note: Each config can only be used for one predictor."));
-
-  // Register custom operators compiled by the user.
-  // This function can only be executed once per process.
-  static std::once_flag custom_operators_registered;
-  std::call_once(custom_operators_registered,
-                 []() { inference::RegisterAllCustomOperator(); });
 
   if (config.use_gpu()) {
     static std::once_flag gflags_initialized;
@@ -635,7 +611,8 @@ std::unique_ptr<PaddlePredictor> CreateTensorRTPredictor(
               config.gpu_device_id()));
       gflags.push_back("dummy");
 
-      float fraction_of_gpu_memory = config.fraction_of_gpu_memory_for_pool();
+      //float fraction_of_gpu_memory = config.fraction_of_gpu_memory_for_pool();
+      float fraction_of_gpu_memory = 0;
       if (fraction_of_gpu_memory > 0.95f) {
         LOG(ERROR)
             << "Allocate too much memory for the GPU memory pool, assigned "
@@ -658,13 +635,6 @@ std::unique_ptr<PaddlePredictor> CreateTensorRTPredictor(
       } else {
         process_level_allocator_enabled = true;
       }
-
-// TODO(wilber): jetson tx2 may fail to run the model due to insufficient memory
-// under the native_best_fit strategy. Modify the default allocation strategy to
-// auto_growth. todo, find a more appropriate way to solve the problem.
-#ifdef WITH_NV_JETSON
-      gflags.push_back("--allocator_strategy=auto_growth");
-#endif
 
       if (framework::InitGflags(gflags)) {
         VLOG(3) << "The following gpu analysis configurations only take effect "
@@ -707,18 +677,7 @@ std::unique_ptr<PaddlePredictor> CreateTensorRTPredictor(
 }
 
 bool TensorRTPredictor::MkldnnQuantize() {
-  /*
-  #if PADDLE_WITH_MKLDNN
-    if (!mkldnn_quantizer_)
-      mkldnn_quantizer_ = new TensorRTPredictor::MkldnnQuantizer(
-          *this, config_.mkldnn_quantizer_config());
-    return mkldnn_quantizer_->Quantize();
-  #else
-    LOG(ERROR) << "Please compile with MKLDNN first to use MkldnnQuantizer";
-    return false;
-  #endif
-  */
-  return {};
+return false;
 }
 
 void TensorRTPredictor::PrepareFeedFetch() {
@@ -797,22 +756,11 @@ std::unique_ptr<ZeroCopyTensor> TensorRTPredictor::GetInputTensor(
   res->SetName(name);
   if (platform::is_cpu_place(place_)) {
     res->SetPlace(PaddlePlace::kCPU);
-  } else if (platform::is_xpu_place(place_)) {
-    if (config_.lite_engine_enabled()) {
-      // Currently, Paddle-Lite's XPU user interface only supports the transfer
-      // of host data pointers. If it is currently used as a subgraph, execution
-      // efficiency will be sacrificed, so it is temporarily set to cpu place.
-      // And, the current lite engine of xpu must execute all parts of the
-      // model.
-      res->SetPlace(PaddlePlace::kCPU);
-    } else {
-      auto xpu_place = BOOST_GET_CONST(platform::XPUPlace, place_);
-      res->SetPlace(PaddlePlace::kXPU, xpu_place.GetDeviceId());
-    }
   } else {
     auto gpu_place = BOOST_GET_CONST(platform::CUDAPlace, place_);
     res->SetPlace(PaddlePlace::kGPU, gpu_place.GetDeviceId());
   }
+
   return res;
 }
 
@@ -829,18 +777,6 @@ std::unique_ptr<ZeroCopyTensor> TensorRTPredictor::GetOutputTensor(
   res->SetName(name);
   if (platform::is_cpu_place(place_)) {
     res->SetPlace(PaddlePlace::kCPU);
-  } else if (platform::is_xpu_place(place_)) {
-    if (config_.lite_engine_enabled()) {
-      // Currently, Paddle-Lite's XPU user interface only supports the transfer
-      // of host data pointers. If it is currently used as a subgraph, execution
-      // efficiency will be sacrificed, so it is temporarily set to cpu place.
-      // And, the current lite engine of xpu must execute all parts of the
-      // model.
-      res->SetPlace(PaddlePlace::kCPU);
-    } else {
-      auto xpu_place = BOOST_GET_CONST(platform::XPUPlace, place_);
-      res->SetPlace(PaddlePlace::kXPU, xpu_place.GetDeviceId());
-    }
   } else {
     auto gpu_place = BOOST_GET_CONST(platform::CUDAPlace, place_);
     res->SetPlace(PaddlePlace::kGPU, gpu_place.GetDeviceId());
@@ -1081,15 +1017,6 @@ TensorRTPredictor::~TensorRTPredictor() {
     scope_->DeleteScope(sub_scope_);
   }
 
-#if PADDLE_WITH_MKLDNN
-/*
-  if (mkldnn_quantizer_) {
-    delete mkldnn_quantizer_;
-    mkldnn_quantizer_ = nullptr;
-  }
-*/
-#endif
-
   memory::Release(place_);
 }
 
@@ -1107,7 +1034,6 @@ std::string TensorRTPredictor::GetSerializedProgram() const {
 // Add SaveOptimModel
 void TensorRTPredictor::SaveOptimModel(const std::string &dir) {
   // save model
-  paddle::imperative::VarBase(true, "");
   std::string model_name = dir + "/model";
   std::ofstream outfile;
   outfile.open(model_name, std::ios::out | std::ios::binary);
@@ -1142,6 +1068,14 @@ void TensorRTPredictor::SaveOptimModel(const std::string &dir) {
   platform::CPUPlace place;
   framework::Executor exe(place);
   exe.Run(save_program, scope(), 0, true, true);
+}
+
+template <>
+std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<AnalysisConfig>(
+    const AnalysisConfig &config) {
+  LOG(WARNING) << "Deprecated. Please use CreatePredictor instead.";
+  return CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
+      config);
 }
 
 }  // namespace paddle

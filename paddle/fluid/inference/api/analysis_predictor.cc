@@ -130,6 +130,7 @@ bool PaddleTensorToLoDTensor(const PaddleTensor &pt, framework::LoDTensor *t,
 bool AnalysisPredictor::Init(
     const std::shared_ptr<framework::Scope> &parent_scope,
     const std::shared_ptr<framework::ProgramDesc> &program) {
+  LOG(FATAL) << "AnalysisPredictor is prohibited";
   VLOG(3) << "Predictor::init()";
   if (config_.with_profile_) {
     LOG(WARNING) << "Profiler is activated, which might affect the performance";
@@ -591,7 +592,7 @@ void AnalysisPredictor::OptimizeInferenceProgram() {
   config_.PartiallyRelease();
   LOG(INFO) << "======= optimize end =======";
 }
-
+/*
 template <>
 std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
     AnalysisConfig, PaddleEngineKind::kAnalysis>(const AnalysisConfig &config) {
@@ -689,7 +690,7 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
 
   return predictor;
 }
-
+*/
 bool AnalysisPredictor::MkldnnQuantize() {
 #if PADDLE_WITH_MKLDNN
   if (!mkldnn_quantizer_)
@@ -1098,7 +1099,7 @@ void AnalysisPredictor::SaveOptimModel(const std::string &dir) {
   framework::Executor exe(place);
   exe.Run(save_program, scope(), 0, true, true);
 }
-
+/*
 template <>
 std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<AnalysisConfig>(
     const AnalysisConfig &config) {
@@ -1106,7 +1107,7 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<AnalysisConfig>(
   return CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
       config);
 }
-
+*/
 }  // namespace paddle
 
 #if PADDLE_WITH_TENSORRT
