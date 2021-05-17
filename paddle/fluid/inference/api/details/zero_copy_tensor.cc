@@ -132,6 +132,14 @@ void ZeroCopyTensor::copy_from_cpu(const T *data) {
   }
 }
 
+cudaStream_t ZeroCopyTensor::GetStream() {
+  paddle::platform::DeviceContextPool &pool = paddle::platform::DeviceContextPool::Instance();
+  paddle::platform::CUDAPlace gpu_place(0);
+  auto *dev_ctx = static_cast<const paddle::platform::CUDADeviceContext *>(
+        pool.Get(gpu_place));
+  return dev_ctx->stream();
+}
+
 template <typename T>
 void ZeroCopyTensor::copy_to_cpu(T *data) {
   EAGER_GET_TENSOR;
@@ -150,7 +158,7 @@ void ZeroCopyTensor::copy_to_cpu(T *data) {
     memory::Copy(platform::CPUPlace(), static_cast<void *>(data), gpu_place,
                  t_data, ele_num * sizeof(T), dev_ctx->stream());
 
-    cudaStreamSynchronize(dev_ctx->stream());
+    //cudaStreamSynchronize(dev_ctx->stream());
 #else
     PADDLE_THROW(platform::errors::Unavailable(
         "Not compile with CUDA, should not reach here."));

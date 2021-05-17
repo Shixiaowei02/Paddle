@@ -27,6 +27,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <cuda_runtime_api.h>
 #include "crypto/cipher.h"
 #include "paddle_infer_declare.h"  // NOLINT
                                    /*! \namespace paddle
@@ -199,6 +200,8 @@ class PD_INFER_DECL ZeroCopyTensor {
   /// \param data The pointer of the data, from which the tensor will copy.
   template <typename T>
   void copy_from_cpu(const T* data);
+
+  cudaStream_t GetStream();
 
   /// \brief Copy the tensor data to the host memory.
   /// It's usually used to get the output tensor data.
