@@ -335,6 +335,18 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
       LOG(INFO) << "Load TRT Optimized Info from "
                 << GetTrtEngineSerializedPath(
                        Get<std::string>("model_opt_cache_dir"), engine_key);
+      const auto* root_scope{param_scope()};
+      for (;root_scope->parent();) {
+        root_scope = root_scope->parent();
+      }
+      for (const auto& name: root_scope->LocalVarNames()) {
+        root_scope->FindLocalVar(name)->Clear();
+      }
+      for (int dev_id = 0; dev_id < paddle::platform::GetCUDADeviceCount();
+          ++dev_id) {
+        memory::Release(platform::CUDAPlace(dev_id));
+      }
+      memory::Release(platform::CPUPlace());
       return;
     }
   }
@@ -353,15 +365,22 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
           &block_desc_temp, *scope,
           std::vector<std::string>(input_names.begin(), input_names.end()),
           param_set, output_mapping, trt_engine);
-#if 1
-  std::vector<std::string> params__;
-  std::copy(param_set.begin(), param_set.end(), std::back_inserter(params__));
-  scope->EraseVars(params__);
+
+  const auto* root_scope{scope};
+  for (;root_scope->parent();) {
+    root_scope = root_scope->parent();
+  }
+  LOG(INFO) << "root_scope->LocalVarNames().size: " << root_scope->LocalVarNames().size();
+  for (const auto& name: root_scope->LocalVarNames()) {
+    LOG(INFO) << "  ===== Clear param: " << name;
+    root_scope->FindLocalVar(name)->Clear();
+  }
   for (int dev_id = 0; dev_id < paddle::platform::GetCUDADeviceCount();
        ++dev_id) {
     memory::Release(platform::CUDAPlace(dev_id));
   }
-#endif
+  memory::Release(platform::CPUPlace());
+
 
   if (use_static_engine) {
     nvinfer1::IHostMemory *serialized_engine_data = trt_engine->Serialize();
@@ -373,6 +392,8 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
                                    engine_key),
         trt_engine_serialized_data);
   }
+  trt_engine_serialized_data.clear();
+  trt_engine_serialized_data.shrink_to_fit();
 }
 
 }  // namespace analysis
