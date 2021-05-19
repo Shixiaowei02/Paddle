@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "paddle/fluid/platform/gpu_info.h"
+#include "paddle/fluid/platform/cuda_device_guard.h"
 #include "paddle/fluid/memory/detail/buddy_allocator.h"
 #include <algorithm>
 #include <utility>
@@ -54,9 +56,20 @@ inline size_t align(size_t size, size_t alignment) {
 }
 
 void* BuddyAllocator::Alloc(size_t unaligned_size) {
+  LOG(INFO) <<  "BuddyAllocator::Alloc " << unaligned_size << ", use_gpu: " << system_allocator_->UseGpu();
+
   // adjust allocation alignment
   size_t size =
       align(unaligned_size + sizeof(MemoryBlock::Desc), min_chunk_size_);
+  LOG(INFO) << "aligned size = " << size;
+
+  if (system_allocator_->UseGpu()) {
+    void* ptr{};
+    int dev_id = system_allocator_->DevID();
+    platform::CUDADeviceGuard guard(dev_id);
+    cudaMalloc(&ptr, size);
+    return ptr;
+  }
 
   // acquire the allocator lock
   std::lock_guard<std::mutex> lock(mutex_);
@@ -94,6 +107,11 @@ void* BuddyAllocator::Alloc(size_t unaligned_size) {
 }
 
 void BuddyAllocator::Free(void* p) {
+  if (system_allocator_->UseGpu()) {
+    int dev_id = system_allocator_->DevID();
+    platform::CUDADeviceGuard guard(dev_id);
+    cudaFree(p);
+  }
   // Point back to metadata
   auto block = static_cast<MemoryBlock*>(p)->Metadata();
 

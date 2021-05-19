@@ -290,6 +290,10 @@ class TensorRTEngine {
                           framework::Tensor* weight_tensor, bool enable_int8,
                           const std::vector<float>& scale = {});
 
+  void ClearWeightMap() {
+    weight_map.clear();
+  }
+
   // A pointer to CPU memory is needed of the TRT weight.
   // Before TRT runs, fluid loads weight into GPU storage.
   // so we need to copy the weights from GPU to CPU in our op converter.

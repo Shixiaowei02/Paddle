@@ -373,6 +373,7 @@ class RecordedCudaMallocHelper {
    * would be clear.
    */
   cudaError_t Malloc(void **ptr, size_t size) {
+    LOG(INFO) << "cudaMalloc: " << size;
     LockGuardPtr<std::mutex> lock(mtx_);
     if (UNLIKELY(NeedRecord() && cur_size_ + size > limit_size_)) {
       return cudaErrorMemoryAllocation;
@@ -467,10 +468,12 @@ std::vector<std::unique_ptr<RecordedCudaMallocHelper>>
     RecordedCudaMallocHelper::instances_;
 
 cudaError_t RecordedCudaMalloc(void **ptr, size_t size, int dev_id) {
+  LOG(INFO) << "RecordedCudaMalloc: " << size << ", dev = " << dev_id;
   return RecordedCudaMallocHelper::Instance(dev_id)->Malloc(ptr, size);
 }
 
 void RecordedCudaFree(void *p, size_t size, int dev_id) {
+  LOG(INFO) << "RecordedCudaFree: " << size << ", dev = " << dev_id;
   return RecordedCudaMallocHelper::Instance(dev_id)->Free(p, size);
 }
 

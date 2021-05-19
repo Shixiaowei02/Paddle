@@ -114,6 +114,7 @@ bool CPUAllocator::UseGpu() const { return false; }
 #ifdef PADDLE_WITH_CUDA
 
 void* GPUAllocator::Alloc(size_t* index, size_t size) {
+  LOG(INFO) << "GPUAllocator::Alloc size: " << size;
   // CUDA documentation doesn't explain if cudaMalloc returns nullptr
   // if size is 0.  We just make sure it does.
   if (size <= 0) return nullptr;
@@ -160,6 +161,7 @@ void* GPUAllocator::Alloc(size_t* index, size_t size) {
 }
 
 void GPUAllocator::Free(void* p, size_t size, size_t index) {
+  
   PADDLE_ENFORCE_EQ(index, 0, platform::errors::InvalidArgument(
                                   "The index should be 0, index is %d", index));
   PADDLE_ENFORCE_GE(gpu_alloc_size_, size,

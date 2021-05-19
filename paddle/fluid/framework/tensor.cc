@@ -73,6 +73,9 @@ void* Tensor::mutable_data(const platform::Place& place,
       holder_->size() < size + offset_) {
     // Reset holder first before re-allocate to save memory
     holder_.reset();
+    if (platform::is_gpu_place(place)) {
+      LOG(INFO) << "  ===== gpu alloc shared: " << size;
+    }
     holder_ = memory::AllocShared(place, size);
     offset_ = 0;
   }

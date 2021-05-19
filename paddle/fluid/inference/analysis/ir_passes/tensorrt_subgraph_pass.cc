@@ -311,6 +311,8 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
   // When running fp16, the output accuracy of the model will be affected,
   // closing the plugin fp16 may bring some improvement on accuracy.
   bool disable_trt_plugin_fp16 = Get<bool>("disable_trt_plugin_fp16");
+  std::cout << "==== before create trt engine.\n";
+  std::cin.get();
   tensorrt::TensorRTEngine *trt_engine =
       inference::Singleton<inference::tensorrt::TRTEngineManager>::Global()
           .Create(engine_key + std::to_string(predictor_id),
@@ -348,19 +350,19 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
   auto *scope = param_scope();
   framework::BlockDesc block_desc_temp(nullptr, block_desc.Proto());
   std::unordered_set<std::string> param_set(params.begin(), params.end());
+  std::cout << "==== before convert trt engine.\n";
+  std::cin.get();
   inference::Singleton<inference::tensorrt::OpConverter>::Global()
       .ConvertBlockToTRTEngine(
           &block_desc_temp, *scope,
           std::vector<std::string>(input_names.begin(), input_names.end()),
           param_set, output_mapping, trt_engine);
+  std::cout << "==== after convert trt engine.\n";
+  std::cin.get();
 #if 1
   std::vector<std::string> params__;
   std::copy(param_set.begin(), param_set.end(), std::back_inserter(params__));
   scope->EraseVars(params__);
-  for (int dev_id = 0; dev_id < paddle::platform::GetCUDADeviceCount();
-       ++dev_id) {
-    memory::Release(platform::CUDAPlace(dev_id));
-  }
 #endif
 
   if (use_static_engine) {
@@ -373,6 +375,15 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
                                    engine_key),
         trt_engine_serialized_data);
   }
+
+  trt_engine->ClearWeightMap();  
+  for (int dev_id = 0; dev_id < paddle::platform::GetCUDADeviceCount();
+       ++dev_id) {
+    memory::Release(platform::CUDAPlace(dev_id));
+  }
+  memory::Release(platform::CPUPlace());
+  std::cout << "==== after release memory trt engine.\n";
+  std::cin.get();
 }
 
 }  // namespace analysis

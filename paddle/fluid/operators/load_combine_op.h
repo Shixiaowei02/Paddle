@@ -69,8 +69,10 @@ class LoadCombineOpKernel : public framework::OpKernel<T> {
     auto &dev_ctx = *pool.Get(place);
     auto out_vars = context.MultiOutputVar("Out");
 
+    LOG(INFO) << "start load tensor... ";
+    std::cin.get();
     for (size_t i = 0; i < out_var_names.size(); i++) {
-      VLOG(4) << "loading tensor: " << out_var_names[i];
+      LOG(INFO) << "loading tensor: " << out_var_names[i];
       PADDLE_ENFORCE_NOT_NULL(
           out_vars[i], platform::errors::InvalidArgument(
                            "The variable %s to be loaded cannot be found.",
@@ -109,6 +111,10 @@ class LoadCombineOpKernel : public framework::OpKernel<T> {
         tensor->ShareDataWith(fp16_tensor);
       }
     }
+
+    LOG(INFO) << "end load tensor... ";
+    std::cin.get();
+
     buffer->peek();
     PADDLE_ENFORCE_EQ(buffer->eof(), true,
                       platform::errors::Unavailable(

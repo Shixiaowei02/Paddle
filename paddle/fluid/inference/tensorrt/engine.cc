@@ -250,11 +250,21 @@ void TensorRTEngine::FreezeNetwork() {
                      "opt_shape, false /*disable_trt_plugin_fp16*/)'";
       }
     }
+    LOG(INFO) << "    infer_engine_.reset(infer_builder_->buildEngineWithConfig("
+        "*network(), *infer_builder_config_)); start";
+        std::cin.get();
     infer_engine_.reset(infer_builder_->buildEngineWithConfig(
         *network(), *infer_builder_config_));
+    LOG(INFO) << "    infer_engine_.reset(infer_builder_->buildEngineWithConfig("
+        "*network(), *infer_builder_config_)); end";
+        std::cin.get();
 #endif
   } else {
+    LOG(INFO) << "infer_engine_.reset(infer_builder_->buildCudaEngine(*network())); start";
+    std::cin.get();
     infer_engine_.reset(infer_builder_->buildCudaEngine(*network()));
+    LOG(INFO) << "infer_engine_.reset(infer_builder_->buildCudaEngine(*network())); end";
+    std::cin.get();
   }
   PADDLE_ENFORCE_NOT_NULL(
       infer_engine_, platform::errors::Fatal(

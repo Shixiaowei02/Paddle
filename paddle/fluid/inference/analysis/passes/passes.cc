@@ -37,9 +37,11 @@ PassRegistry::PassRegistry() {
                   std::unique_ptr<AnalysisPass>(new IrInferCleanGraphPass));
   passes_.emplace("memory_optimize_pass",
                   std::unique_ptr<AnalysisPass>(new MemoryOptimizePass));
+  /*
   passes_.emplace(
       "ir_params_sync_among_devices_pass",
       std::unique_ptr<AnalysisPass>(new IrParamsSyncAmongDevicesPass));
+  */
   passes_.emplace("adjust_cudnn_workspace_size_pass",
                   std::unique_ptr<AnalysisPass>(new AdjustCudnnWorkSpacePass));
   passes_.emplace("inference_op_replace_pass",

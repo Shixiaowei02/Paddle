@@ -174,8 +174,11 @@ class OpConverter {
     std::unique_lock<std::mutex> lk(mut_);
     for (int i = 0; i < block.ops_size(); i++) {
       const auto& op = block.ops(i);
+      LOG(INFO) << "convert TRTOp " << op.type() << " start.. ";
       ConvertOp(op, parameters, scope, engine);
+      LOG(INFO) << "convert TRTOp " << op.type() << " end.. ";
     }
+    std::cin.get();
   }
 
   // The scope  here should be inited with the parameter vars.
@@ -245,8 +248,17 @@ class OpConverter {
     for (auto& output : outputs) {
       engine->DeclareOutput(output);
     }
+
+    LOG(INFO) << "FreezeNetwork... start";
+    std::cin.get();
     engine->FreezeNetwork();
+    LOG(INFO) << "FreezeNetwork... end";
+    std::cin.get();
+    LOG(INFO) << "ClearWeights... start";
+    std::cin.get();
     engine->ClearWeights();
+    LOG(INFO) << "ClearWeights... end";
+    std::cin.get();
   }
 
   void RreplenishLayerAndOutput(
