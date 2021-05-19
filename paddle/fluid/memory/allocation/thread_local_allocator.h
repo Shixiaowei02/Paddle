@@ -26,6 +26,17 @@ namespace paddle {
 namespace memory {
 namespace allocation {
 
+class DirectAllocator {
+public:
+  DirectAllocator(const platform::Place& place) : place_{place} {}
+  void* Alloc(size_t unaligned_size);
+  void Free(void* ptr);
+  uint64_t Release() { return 0;}
+private:
+  platform::Place place_;
+};
+
+
 class ThreadLocalAllocatorImpl;
 
 class ThreadLocalAllocation : public Allocation {
@@ -55,7 +66,7 @@ class ThreadLocalAllocatorImpl
   uint64_t ReleaseImpl();
 
  private:
-  std::unique_ptr<memory::detail::BuddyAllocator> buddy_allocator_;
+  std::unique_ptr<DirectAllocator> direct_allocator_;
   platform::Place place_;
 };
 

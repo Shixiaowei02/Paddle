@@ -54,9 +54,11 @@ inline size_t align(size_t size, size_t alignment) {
 }
 
 void* BuddyAllocator::Alloc(size_t unaligned_size) {
+  LOG(INFO) <<  "BuddyAllocator::Alloc " << unaligned_size << ", use_gpu: " << system_allocator_->UseGpu();
   // adjust allocation alignment
   size_t size =
       align(unaligned_size + sizeof(MemoryBlock::Desc), min_chunk_size_);
+  LOG(INFO) << "aligned size = " << size;
 
   // acquire the allocator lock
   std::lock_guard<std::mutex> lock(mutex_);
