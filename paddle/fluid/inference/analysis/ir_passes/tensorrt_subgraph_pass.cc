@@ -335,20 +335,19 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
       LOG(INFO) << "Load TRT Optimized Info from "
                 << GetTrtEngineSerializedPath(
                        Get<std::string>("model_opt_cache_dir"), engine_key);
-      /*
       const auto* root_scope{param_scope()};
       for (;root_scope->parent();) {
         root_scope = root_scope->parent();
       }
-     // for (const auto& name: root_scope->LocalVarNames()) {
-        //root_scope->FindLocalVar(name)->Clear();
-     // }
+      for (const auto& name: root_scope->LocalVarNames()) {
+        LOG(INFO) << "  ===== Clear param: " << name;
+        root_scope->FindLocalVar(name)->Clear();
+      }
       for (int dev_id = 0; dev_id < paddle::platform::GetCUDADeviceCount();
           ++dev_id) {
         memory::Release(platform::CUDAPlace(dev_id));
       }
       memory::Release(platform::CPUPlace());
-      */
       return;
     }
   }
@@ -367,7 +366,7 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
           &block_desc_temp, *scope,
           std::vector<std::string>(input_names.begin(), input_names.end()),
           param_set, output_mapping, trt_engine);
-  /*
+
   const auto* root_scope{scope};
   for (;root_scope->parent();) {
     root_scope = root_scope->parent();
@@ -375,14 +374,14 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
   LOG(INFO) << "root_scope->LocalVarNames().size: " << root_scope->LocalVarNames().size();
   for (const auto& name: root_scope->LocalVarNames()) {
     LOG(INFO) << "  ===== Clear param: " << name;
-    //root_scope->FindLocalVar(name)->Clear();
+    root_scope->FindLocalVar(name)->Clear();
   }
   for (int dev_id = 0; dev_id < paddle::platform::GetCUDADeviceCount();
        ++dev_id) {
     memory::Release(platform::CUDAPlace(dev_id));
   }
   memory::Release(platform::CPUPlace());
-  */
+
 
 
   if (use_static_engine) {
