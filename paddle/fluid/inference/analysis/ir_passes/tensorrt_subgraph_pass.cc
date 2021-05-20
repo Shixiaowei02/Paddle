@@ -372,7 +372,7 @@ void TensorRtSubgraphPass::CreateTensorRTOp(
     root_scope = root_scope->parent();
   }
   LOG(INFO) << "root_scope->LocalVarNames().size: " << root_scope->LocalVarNames().size();
-  for (const auto& name: root_scope->LocalVarNames()) {
+  for (const auto& name: param_set) {
     LOG(INFO) << "  ===== Clear param: " << name;
     root_scope->FindLocalVar(name)->Clear();
   }
